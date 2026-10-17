@@ -36,7 +36,7 @@ def create_invoice(contract: str, period_from: str, period_to: str) -> dict:
 
 
 @frappe.whitelist(methods=["POST"])
-def create_act(invoice: str, period_from: str, period_to: str, items: list[dict]) -> dict:
+def create_act(invoice: str, period_from: str, period_to: str, items: list[dict] | str) -> dict:
 	if not frappe.has_permission("UA Act", "create"):
 		frappe.throw("Немає права створювати акти", frappe.PermissionError)
 	if isinstance(items, str):

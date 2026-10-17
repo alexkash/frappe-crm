@@ -129,6 +129,9 @@ class TestActs(FrappeTestCase):
 			[Decimal(str(act.vat_total)) for act in acts], [Decimal("0.01"), Decimal("0.00"), Decimal("0.01")]
 		)
 		self.assertEqual(sum(Decimal(str(act.grand_total)) for act in acts), Decimal("0.11"))
+		from recuite_billing.printing import render_html
+
+		self.assertIn("ПДВ -0,01 грн", render_html(acts[1]))
 
 	def test_duplicate_period_is_idempotent_and_does_not_inherit_signature_flags(self):
 		from recuite_billing.api import create_act, create_invoice

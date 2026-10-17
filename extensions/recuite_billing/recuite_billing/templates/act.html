@@ -1,5 +1,5 @@
 {% include "_styles.html" %}
-<div class="document">
+<div class="document act-document">
   {% if doc.docstatus == 0 %}<div class="draft">ЧЕРНЕТКА</div>{% endif %}
   {% if images.get('logo') %}<img class="logo" alt="Логотип" src="{{ images.logo | e }}">{% endif %}
   <table class="two-columns approval">
@@ -26,18 +26,20 @@
     <table class="two-columns act-footer">
       <tr>
         <td>
-          <strong>Від Виконавця:</strong><br><br>{{ date_uk(doc.posting_date) }}<br><br>{{ party.issuer.legal_name | e }}<br><br>
+          <strong>Від Виконавця:</strong><br>{{ date_uk(doc.posting_date) }}<br>{{ party.issuer.legal_name | e }}<br>
           <div class="details">Юридична адреса: {{ party.issuer.legal_address | e }}</div>
           {{ 'РНОКПП' if party.issuer.issuer_type == 'ФОП' else 'ЄДРПОУ' }}: {{ party.issuer.registration_code | e }}<br>
+          {% if party.issuer.vat_registered %}ІПН платника ПДВ: {{ party.issuer.vat_number | e }}<br>{% endif %}
           {% if party.bank.iban %}П/р № {{ party.bank.iban | e }}<br>в {{ party.bank.bank_name | e }}{% if party.bank.bank_mfo %}, МФО {{ party.bank.bank_mfo | e }}{% endif %}<br>{% endif %}
           {% if party.issuer.phone %}Телефон: {{ party.issuer.phone | e }}<br>{% endif %}
           {% if party.issuer.income_tax_note %}{{ party.issuer.income_tax_note | e }}{% endif %}
           {% if images.get('stamp') %}<br><img class="stamp-image" style="margin:3mm 0 0" alt="Зображення печатки виконавця" src="{{ images.stamp | e }}">{% endif %}
         </td>
         <td>
-          <strong>Від Замовника:</strong><br><br>{{ date_uk(doc.posting_date) }}<br><br>{{ party.customer.legal_name | e }}<br><br>
+          <strong>Від Замовника:</strong><br>{{ date_uk(doc.posting_date) }}<br>{{ party.customer.legal_name | e }}<br>
           <div class="details">Юридична адреса: {{ party.customer.legal_address | e }}</div>
           ЄДРПОУ / РНОКПП: {{ party.customer.registration_code | e }}<br>
+          {% if party.customer.vat_registered %}ІПН платника ПДВ: {{ party.customer.vat_number | e }}<br>{% endif %}
           {% if party.customer.iban %}П/р № {{ party.customer.iban | e }}<br>в {{ party.customer.bank_name | e }}{% if party.customer.bank_mfo %}, МФО {{ party.customer.bank_mfo | e }}{% endif %}<br>{% endif %}
           {% if party.customer.phone %}Телефон: {{ party.customer.phone | e }}<br>{% endif %}
           {% if party.customer.income_tax_note %}{{ party.customer.income_tax_note | e }}{% endif %}

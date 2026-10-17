@@ -8,6 +8,7 @@
       <td>
         <strong>{{ party.issuer.legal_name | e }}</strong><br>
         {{ 'РНОКПП' if party.issuer.issuer_type == 'ФОП' else 'ЄДРПОУ' }} {{ party.issuer.registration_code | e }}{% if party.issuer.phone %}, тел. {{ party.issuer.phone | e }}{% endif %}<br>
+        {% if party.issuer.vat_registered %}ІПН платника ПДВ: {{ party.issuer.vat_number | e }}<br>{% endif %}
         {% if party.bank.iban %}Р/р {{ party.bank.iban | e }} в {{ party.bank.bank_name | e }}{% if party.bank.bank_mfo %}, МФО {{ party.bank.bank_mfo | e }}{% endif %}<br>{% endif %}
         {% if party.issuer.income_tax_note %}{{ party.issuer.income_tax_note | e }}<br>{% endif %}
         <span class="details">Адреса: {{ party.issuer.legal_address | e }}</span>

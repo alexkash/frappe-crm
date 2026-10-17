@@ -1,5 +1,10 @@
 <template>
   <section class="space-y-4 p-4" aria-label="Документи компанії">
+    <a
+      :href="documentURL('CRM Organization', props.organization)"
+      class="inline-block text-sm underline"
+      >Реквізити компанії →</a
+    >
     <div class="flex flex-wrap gap-2">
       <Button
         v-for="item in kinds"

@@ -100,7 +100,7 @@ def contract(owner=None, company=None, item=None, qty=12, cadence="Yearly"):
 
 def user(role="UA Billing User", allowed_issuer=None):
 	name = "billing-" + frappe.generate_hash(length=8) + "@example.invalid"
-	frappe.get_doc(
+	person = frappe.get_doc(
 		{
 			"doctype": "User",
 			"email": name,
@@ -110,7 +110,13 @@ def user(role="UA Billing User", allowed_issuer=None):
 			"send_welcome_email": 0,
 			"roles": [{"role": "Sales User"}, {"role": role}],
 		}
-	).insert(ignore_permissions=True)
+	)
+	previous = frappe.flags.in_import
+	frappe.flags.in_import = True
+	try:
+		person.insert(ignore_permissions=True)
+	finally:
+		frappe.flags.in_import = previous
 	if allowed_issuer:
 		frappe.get_doc(
 			{

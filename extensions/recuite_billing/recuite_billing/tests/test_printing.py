@@ -78,6 +78,12 @@ class TestPrinting(FrappeTestCase):
 		from recuite_billing.printing import get_document_pdf
 
 		invoice = self.draft()
+		owner = frappe.get_doc("UA Issuer", invoice.issuer)
+		owner.income_tax_note = "Платник єдиного податку, третя група, без ПДВ"
+		owner.save()
+		invoice.items[
+			0
+		].description = "Технічна підтримка інформаційної системи. Супровід, консультації та усунення технічних несправностей."
 		with patch("recuite_billing.printing.render_pdf_bytes", return_value=pdf_bytes()):
 			invoice.submit()
 		act = frappe.get_doc(
@@ -85,9 +91,34 @@ class TestPrinting(FrappeTestCase):
 			create_act(
 				invoice.name, "2026-01-01", "2026-01-31", [{"invoice_item": invoice.items[0].name, "qty": 1}]
 			)["name"],
-		).submit()
+		)
+		from PIL import Image
+
+		for kind in ("Logo", "Signature", "Stamp"):
+			image = asset(owner, kind)
+			buffer = BytesIO()
+			Image.new("RGBA", (500, 500) if kind == "Stamp" else (700, 180), (10, 30, 100, 100)).save(
+				buffer, format="PNG"
+			)
+			file = frappe.get_doc(
+				{
+					"doctype": "File",
+					"file_name": "layout.png",
+					"content": buffer.getvalue(),
+					"is_private": 1,
+					"attached_to_doctype": image.doctype,
+					"attached_to_name": image.name,
+				}
+			).insert()
+			image.image, image.active = file.file_url, 1
+			image.save()
+			act.set(f"print_{kind.lower()}", 1)
+			act.set(f"{kind.lower()}_asset", image.name)
+		act.submit()
 		content = get_document_pdf(act.doctype, act.name).get_content()
-		text = "\n".join(page.extract_text() for page in PdfReader(BytesIO(content)).pages)
+		reader = PdfReader(BytesIO(content))
+		self.assertEqual(len(reader.pages), 1)
+		text = "\n".join(page.extract_text() for page in reader.pages)
 		for block in (
 			"ЗАТВЕРДЖУЮ",
 			"АКТ №",
