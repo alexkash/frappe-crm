@@ -22,4 +22,5 @@ RUN env/bin/pip install -e apps/crm \
     && wkhtmltopdf --version
 
 RUN if [ ! -e sites/assets ]; then ln -s /home/frappe/frappe-bench/assets sites/assets; fi \
+    && yarn --cwd apps/crm/frontend install --frozen-lockfile \
     && bench build --app crm

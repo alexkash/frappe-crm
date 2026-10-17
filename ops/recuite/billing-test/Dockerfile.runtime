@@ -5,6 +5,8 @@ USER frappe
 WORKDIR /home/frappe/frappe-bench
 ENV PYTHONDONTWRITEBYTECODE=1
 COPY --chown=frappe:frappe crm apps/crm/crm
+RUN rm -rf apps/crm/crm/public/frontend
+COPY --chown=frappe:frappe ops/recuite/billing-test/.frontend-build apps/crm/crm/public/frontend
 COPY --chown=frappe:frappe extensions/recuite_billing apps/recuite_billing
 COPY --chown=frappe:frappe ops/recuite/billing-test /opt/billing-test
 RUN env/bin/pip install --no-deps -e apps/recuite_billing \

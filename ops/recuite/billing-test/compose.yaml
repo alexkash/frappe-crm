@@ -1,7 +1,7 @@
 name: recuite-billing-test
 
 x-app: &app
-  image: recuite/billing-test:local
+  image: ${BILLING_TEST_IMAGE:-recuite/billing-test:local}
   platform: linux/amd64
   restart: "no"
   environment:

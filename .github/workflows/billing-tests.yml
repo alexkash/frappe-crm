@@ -7,6 +7,8 @@ on:
       - extensions/recuite_billing/**
       - ops/recuite/billing-test/**
       - crm/api/billing.py
+      - frontend/**
+      - ops/recuite/Dockerfile
       - .github/workflows/billing-tests.yml
 
 jobs:
@@ -38,6 +40,8 @@ jobs:
           "${compose[@]}" config --quiet
           "${compose[@]}" up -d db redis-cache redis-queue
           "${compose[@]}" run --rm -T bootstrap
+          "${compose[@]}" run --rm -T --entrypoint bench backend --site test_site migrate
+          "${compose[@]}" run --rm -T --entrypoint bench backend --site test_site migrate
           "${compose[@]}" run --rm -T --entrypoint /home/frappe/frappe-bench/env/bin/python backend /opt/billing-test/run_tests.py
       - name: Stop this runner's test project
         if: always()
