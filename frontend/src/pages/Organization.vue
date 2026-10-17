@@ -162,6 +162,7 @@
       <template #tab-label="{ tab }">{{ __(tab.label) }}</template>
       <template #tab-suffix="{ tab, active }">
         <Badge
+          v-if="tab.value !== 'documents'"
           :class="[active ? 'bg-surface-gray-10' : 'bg-gray-600']"
           variant="solid"
           theme="gray"
@@ -171,6 +172,10 @@
         </Badge>
       </template>
       <template #tab-panel="{ tab }">
+        <OrganizationDocuments
+          v-if="tab.value === 'documents'"
+          :organization="props.organizationId"
+        />
         <DealsListView
           v-if="tab.label === 'Deals' && rows.length"
           class="mt-4"
@@ -186,7 +191,7 @@
           :options="{ selectable: false, showTooltip: false }"
         />
         <EmptyState
-          v-if="!rows.length"
+          v-if="tab.value !== 'documents' && !rows.length"
           :icon="tab.iconLeft"
           :name="__(tab.label)"
           :description="
@@ -224,6 +229,8 @@
 </template>
 
 <script setup>
+import OrganizationDocuments from '@/components/OrganizationDocuments.vue'
+import { useBilling } from '@/composables/useBilling'
 import ErrorPage from '@/components/ErrorPage.vue'
 import Resizer from '@/components/Resizer.vue'
 import SidePanelLayout from '@/components/SidePanelLayout.vue'
@@ -429,7 +436,8 @@ function getParsedSections(_sections) {
 }
 
 const activeTab = ref('deals')
-const tabs = [
+const billing = useBilling()
+const tabs = computed(() => [
   {
     value: 'deals',
     label: 'Deals',
@@ -442,7 +450,10 @@ const tabs = [
     iconLeft: ContactsIcon,
     count: computed(() => contacts.data?.length),
   },
-]
+  ...(billing.data?.enabled && billing.data?.can_read
+    ? [{ name: 'Documents', value: 'documents', label: 'Документи' }]
+    : []),
+])
 
 const deals = createListResource({
   type: 'list',

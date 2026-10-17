@@ -188,6 +188,7 @@ import PinIcon from '@/components/Icons/PinIcon.vue'
 import UserDropdown from '@/components/UserDropdown.vue'
 import SquareAsterisk from '@/components/Icons/SquareAsterisk.vue'
 import WebsiteIcon from '@/components/Icons/WebsiteIcon.vue'
+import { useBilling } from '@/composables/useBilling'
 import { getNavigationItems } from '@/utils/navigation'
 import ContactsIcon from '@/components/Icons/ContactsIcon.vue'
 import DealsIcon from '@/components/Icons/DealsIcon.vue'
@@ -254,7 +255,13 @@ const isCollapsed = computed(() => isSidebarCollapsed.value && !props.mobile)
 const isFCSite = ref(window.is_fc_site)
 const isDemoSite = ref(window.is_demo_site)
 
-const links = getNavigationItems({ mobile: props.mobile })
+const billing = useBilling()
+const links = computed(() =>
+  getNavigationItems({
+    mobile: props.mobile,
+    billing: billing.data?.enabled && billing.data?.can_read,
+  }),
+)
 
 const allViews = computed(() => {
   let _views = [
@@ -262,7 +269,7 @@ const allViews = computed(() => {
       name: 'All Views',
       hideLabel: true,
       opened: true,
-      views: links.map((link) => ({
+      views: links.value.map((link) => ({
         label: link.label,
         icon: link.icon,
         key: link.route,
