@@ -1,0 +1,48 @@
+{% include "_styles.html" %}
+<div class="document">
+  {% if doc.docstatus == 0 %}<div class="draft">ЧЕРНЕТКА</div>{% endif %}
+  {% if images.get('logo') %}<img class="logo" alt="Логотип" src="{{ images.logo | e }}">{% endif %}
+  <table class="two-columns approval">
+    <tr>
+      <td>ЗАТВЕРДЖУЮ<br><br>{{ party.issuer.legal_name | e }}<br><span class="signature-line">{% if images.get('signature') %}<img class="signature-image" alt="Зображення підпису виконавця" src="{{ images.signature | e }}">{% endif %}</span><br>{{ party.issuer.signatory | e }}<br>{{ party.issuer.signatory_position | e }}</td>
+      <td>ЗАТВЕРДЖУЮ<br><br>{{ party.customer.legal_name | e }}<br><span class="signature-line"></span><br>{{ party.customer.signatory | e }}<br>{{ party.customer.signatory_position | e }}</td>
+    </tr>
+  </table>
+  <h1>АКТ № {{ (doc.print_number or 'Чернетка') | e }} здачі-прийняття робіт (надання послуг)</h1>
+  <p>Ми, представники Замовника {{ party.customer.legal_name | e }}, {{ party.customer.signatory | e }}, з одного боку, та Виконавець {{ party.issuer.legal_name | e }}, {{ party.issuer.signatory | e }}, з іншого боку, склали цей акт про те, що Виконавцем були проведені такі роботи{% if party.get('contract') %} згідно договору № {{ party.contract.number | e }} від {{ date_uk(party.contract.date) }}{% endif %}, рахунок № {{ party.invoice.number | e }} від {{ date_uk(party.invoice.date) }}.</p>
+  <p>Період надання послуг: {{ date_uk(doc.period_from) }} — {{ date_uk(doc.period_to) }}.</p>
+  <table class="act-services">
+    {% for row in items %}
+    <tr><td class="details">{{ row.product_name | e }}{% if row.description and row.description != row.product_name %}<br>{{ row.description | e }}{% endif %}</td><td class="number">{{ money_uk(row.net_amount) }} грн.<br><span class="muted">сума без ПДВ</span></td></tr>
+    {% endfor %}
+  </table>
+  <div class="final-block">
+    <p>Загальна вартість робіт (послуг) без ПДВ: <strong>{{ money_uk(doc.net_total) }} грн.</strong></p>
+    {% if tax_label != 'Без ПДВ' %}<p>{{ tax_label | e }}: {{ money_uk(doc.vat_total) }} грн.</p>{% endif %}
+    <p>Всього: <strong>{{ money_uk(doc.grand_total) }} грн.</strong> ({{ amount_in_words_uk(doc.grand_total) | e }}).</p>
+    {% if tax_label == 'Без ПДВ' %}<p>Без ПДВ.</p>{% endif %}
+    <p>Сторони претензій одна до одної не мають.</p>
+    <p style="margin-top:6mm">Місце складання: {{ (doc.place_of_issue or '') | e }}</p>
+    <table class="two-columns act-footer">
+      <tr>
+        <td>
+          <strong>Від Виконавця:</strong><br><br>{{ date_uk(doc.posting_date) }}<br><br>{{ party.issuer.legal_name | e }}<br><br>
+          <div class="details">Юридична адреса: {{ party.issuer.legal_address | e }}</div>
+          {{ 'РНОКПП' if party.issuer.issuer_type == 'ФОП' else 'ЄДРПОУ' }}: {{ party.issuer.registration_code | e }}<br>
+          {% if party.bank.iban %}П/р № {{ party.bank.iban | e }}<br>в {{ party.bank.bank_name | e }}{% if party.bank.bank_mfo %}, МФО {{ party.bank.bank_mfo | e }}{% endif %}<br>{% endif %}
+          {% if party.issuer.phone %}Телефон: {{ party.issuer.phone | e }}<br>{% endif %}
+          {% if party.issuer.income_tax_note %}{{ party.issuer.income_tax_note | e }}{% endif %}
+          {% if images.get('stamp') %}<br><img class="stamp-image" style="margin:3mm 0 0" alt="Зображення печатки виконавця" src="{{ images.stamp | e }}">{% endif %}
+        </td>
+        <td>
+          <strong>Від Замовника:</strong><br><br>{{ date_uk(doc.posting_date) }}<br><br>{{ party.customer.legal_name | e }}<br><br>
+          <div class="details">Юридична адреса: {{ party.customer.legal_address | e }}</div>
+          ЄДРПОУ / РНОКПП: {{ party.customer.registration_code | e }}<br>
+          {% if party.customer.iban %}П/р № {{ party.customer.iban | e }}<br>в {{ party.customer.bank_name | e }}{% if party.customer.bank_mfo %}, МФО {{ party.customer.bank_mfo | e }}{% endif %}<br>{% endif %}
+          {% if party.customer.phone %}Телефон: {{ party.customer.phone | e }}<br>{% endif %}
+          {% if party.customer.income_tax_note %}{{ party.customer.income_tax_note | e }}{% endif %}
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>

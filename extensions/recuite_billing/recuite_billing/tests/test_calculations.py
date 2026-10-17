@@ -5,6 +5,18 @@ from recuite_billing.calculations import allocate_act_items, calculate_items
 
 
 class TestCalculations(unittest.TestCase):
+	def test_act_request_rejects_malformed_references_without_a_type_error(self):
+		invoice = calculate_items([{"name": "r", "qty": 1, "net_rate": 100, "vat_mode": "Без ПДВ"}], False)[
+			"items"
+		]
+		for requested in [
+			[None],
+			[{"invoice_item": {"name": "r"}, "qty": 1}],
+			[{"invoice_item": ["r"], "qty": 1}],
+		]:
+			with self.subTest(requested=requested), self.assertRaises(ValueError):
+				allocate_act_items(invoice, [], requested)
+
 	def test_rounds_each_line_and_ignores_supplied_totals(self):
 		result = calculate_items(
 			[

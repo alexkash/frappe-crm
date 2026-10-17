@@ -31,3 +31,168 @@ def create_invoice(contract: str, period_from: str, period_to: str) -> dict:
 		}
 	).insert()
 	return {"name": doc.name, "existing": False}
+
+
+@frappe.whitelist(methods=["POST"])
+def create_act(invoice: str, period_from: str, period_to: str, items: list[dict]) -> dict:
+	if not frappe.has_permission("UA Act", "create"):
+		frappe.throw("Немає права створювати акти", frappe.PermissionError)
+	if isinstance(items, str):
+		items = frappe.parse_json(items)
+	if not isinstance(items, list) or not items or any(not isinstance(row, dict) for row in items):
+		frappe.throw("Оберіть позиції рахунку та кількість")
+	source = record("UA Invoice", invoice, lock=True)
+	if source.docstatus != 1:
+		frappe.throw("Акт можна створити лише до випущеного рахунку")
+	first, last = dates(period_from, period_to)
+	rows = active_periods("UA Act", "invoice", source.name, first, last)
+	if rows:
+		if len(rows) == 1 and rows[0].period_from == first and rows[0].period_to == last:
+			doc = record("UA Act", rows[0].name, lock=True)
+			return {"name": doc.name, "existing": True}
+		frappe.throw("До рахунку вже існує акт із перехресним періодом")
+	doc = frappe.get_doc(
+		{
+			"doctype": "UA Act",
+			"invoice": source.name,
+			"period_from": first,
+			"period_to": last,
+			"items": [{"invoice_item": row.get("invoice_item"), "qty": row.get("qty")} for row in items],
+		}
+	).insert()
+	return {"name": doc.name, "existing": False}
+
+
+@frappe.whitelist()
+def get_capabilities() -> dict:
+	return {
+		"enabled": True,
+		"can_read": any(
+			frappe.has_permission(kind, "read") for kind in ("UA Contract", "UA Invoice", "UA Act")
+		),
+		"can_create": bool(frappe.has_permission("UA Invoice", "create")),
+		"can_manage": bool(frappe.has_permission("UA Issuer", "write")),
+	}
+
+
+@frappe.whitelist()
+def get_organization_documents(organization: str, kind: str, start: int = 0, page_length: int = 20) -> dict:
+	kinds = {"contracts": "UA Contract", "invoices": "UA Invoice", "acts": "UA Act"}
+	if kind not in kinds:
+		frappe.throw("Невідомий тип документів")
+	try:
+		start, page_length = int(start), int(page_length)
+		if start < 0 or not 1 <= page_length <= 100:
+			raise ValueError
+	except (ValueError, TypeError):
+		frappe.throw("Неприпустимі параметри сторінки")
+	record("CRM Organization", organization)
+	fields = ["name", "issuer", "docstatus", "modified"] + (
+		["contract_number", "contract_date"]
+		if kind == "contracts"
+		else ["print_number", "posting_date", "period_from", "period_to", "grand_total", "pdf_file"]
+	)
+	rows = frappe.get_list(
+		kinds[kind],
+		filters={"organization": organization},
+		fields=fields,
+		order_by="modified desc",
+		start=start,
+		page_length=page_length + 1,
+	)
+	return {"rows": rows[:page_length], "has_more": len(rows) > page_length}
+
+
+@frappe.whitelist()
+def get_period_suggestion(doctype: str, name: str) -> dict:
+	from frappe.utils import getdate
+
+	from recuite_billing.periods import period_for_index
+
+	if doctype not in {"UA Contract", "UA Invoice"}:
+		frappe.throw("Невідоме джерело періодів")
+	source = record(doctype, name)
+	if doctype == "UA Contract":
+		first, last, cadence, target, field = (
+			source.start_date,
+			source.end_date,
+			source.invoice_cadence,
+			"UA Invoice",
+			"contract",
+		)
+	else:
+		first, last, cadence, target, field = (
+			source.period_from,
+			source.period_to,
+			source.act_cadence,
+			"UA Act",
+			"invoice",
+		)
+	periods = frappe.get_list(
+		target,
+		filters={field: name, "docstatus": ["<", 2]},
+		fields=["period_from", "period_to"],
+		page_length=0,
+	)
+	for index in range(1200):
+		period = period_for_index(getdate(first), getdate(last), cadence, index)
+		if period is None:
+			return {}
+		if not any(
+			getdate(row.period_from) <= period[1] and getdate(row.period_to) >= period[0] for row in periods
+		):
+			return {"period_from": period[0].isoformat(), "period_to": period[1].isoformat()}
+	frappe.throw("Завеликий діапазон періодів; вкажіть період вручну")
+
+
+@frappe.whitelist()
+def get_act_items(invoice: str) -> list:
+	from decimal import ROUND_DOWN, Decimal
+
+	from frappe.utils import getdate
+
+	from recuite_billing.periods import period_for_index
+
+	source = record("UA Invoice", invoice, lock=True)
+	if source.docstatus != 1:
+		frappe.throw("Спочатку випустіть рахунок")
+	acts = frappe.db.get_values(
+		"UA Act", {"invoice": invoice, "docstatus": 1}, "name", pluck=True, for_update=True
+	)
+	used = (
+		frappe.db.get_values(
+			"UA Billing Item",
+			{"parenttype": "UA Act", "parent": ["in", acts]},
+			["invoice_item", "qty"],
+			as_dict=True,
+			for_update=True,
+		)
+		if acts
+		else []
+	)
+	count = 0
+	while period_for_index(getdate(source.period_from), getdate(source.period_to), source.act_cadence, count):
+		count += 1
+		if count >= 1200:
+			break
+	result = []
+	for row in source.items:
+		remaining = Decimal(str(row.qty)) - sum(
+			(Decimal(str(item.qty)) for item in used if item.invoice_item == row.name), Decimal(0)
+		)
+		if remaining > 0:
+			qty = min(
+				remaining,
+				(Decimal(str(row.qty)) / max(1, count)).quantize(Decimal("0.000001"), rounding=ROUND_DOWN),
+			)
+			result.append(
+				{
+					**{field: row.get(field) for field in ITEM_FIELDS},
+					"invoice_item": row.name,
+					"product_name": row.product_name,
+					"uom": row.uom,
+					"remaining": str(remaining),
+					"qty": str(qty or remaining),
+				}
+			)
+	return result

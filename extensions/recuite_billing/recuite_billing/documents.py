@@ -4,7 +4,7 @@ import frappe
 from frappe.model.naming import getseries
 from frappe.utils import get_datetime, getdate, strip_html, today
 
-from recuite_billing.calculations import calculate_items
+from recuite_billing.calculations import allocate_act_items, calculate_items
 from recuite_billing.parties import make_party_snapshot
 from recuite_billing.periods import is_partial_period
 from recuite_billing.permissions import assert_owned_rows
@@ -240,6 +240,82 @@ def cancel_invoice(doc):
 		"UA Act", {"invoice": doc.name, "docstatus": 1}, "name", for_update=True, limit=1
 	):
 		frappe.throw("Спочатку скасуйте всі випущені акти цього рахунку")
+	doc.period_key = None
+
+
+def validate_act(doc, *, issue=False):
+	source = record("UA Invoice", doc.invoice, lock=True)
+	if source.docstatus != 1:
+		frappe.throw("Акт можна створити лише до випущеного рахунку")
+	_matching_parties(doc, source)
+	current = lock_existing(doc)
+	assert_owned_rows(doc, "items")
+	doc.posting_date = getdate(doc.posting_date or today())
+	doc.period_from, doc.period_to = dates(doc.period_from, doc.period_to)
+	if doc.period_from < getdate(source.period_from) or doc.period_to > getdate(source.period_to):
+		frappe.throw("Період акта має бути в межах періоду рахунку")
+	if doc.print_number:
+		frappe.throw("Номер акта присвоюється лише під час випуску")
+	if active_periods("UA Act", "invoice", source.name, doc.period_from, doc.period_to, exclude=doc.name):
+		frappe.throw("До рахунку вже існує акт із цим або перехресним періодом")
+	doc.contract, doc.deal, doc.bank_account = source.contract, source.deal, source.bank_account
+	doc.period_key = f"act:{source.name}:{doc.period_from}:{doc.period_to}"
+	parents = frappe.db.get_values(
+		"UA Act", {"invoice": source.name, "docstatus": 1}, "name", pluck=True, for_update=True
+	)
+	used = (
+		frappe.db.get_values(
+			"UA Billing Item",
+			{"parenttype": "UA Act", "parentfield": "items", "parent": ["in", parents]},
+			["invoice_item", "qty", "net_amount", "vat_amount"],
+			as_dict=True,
+			for_update=True,
+		)
+		if parents
+		else []
+	)
+	try:
+		result = allocate_act_items(
+			[row.as_dict() for row in source.items],
+			used,
+			[{"invoice_item": row.invoice_item, "qty": row.qty} for row in doc.items],
+		)
+	except ValueError as exc:
+		frappe.throw(str(exc))
+	for row, values in zip(doc.items, result["items"], strict=True):
+		for field in (
+			*ITEM_FIELDS,
+			"invoice_item",
+			"net_amount",
+			"vat_amount",
+			"gross_amount",
+			"rounding_adjustment",
+		):
+			row.set(field, str(int(values[field])) if field == "vat_rate" else values.get(field))
+	for field in ("net_total", "vat_total", "grand_total"):
+		doc.set(field, result[field])
+	doc.party_snapshot = source.party_snapshot
+	doc.pdf_file = doc.pdf_sha256 = doc.print_assets_snapshot = None
+	if not doc.place_of_issue:
+		doc.place_of_issue = record("UA Issuer", source.issuer).place_of_issue
+	if issue and not doc.place_of_issue:
+		frappe.throw("Вкажіть місце складання акта")
+	if doc.amended_from:
+		previous = record("UA Act", doc.amended_from)
+		if previous.docstatus != 2 or previous.invoice != source.name:
+			frappe.throw("Редакція має посилатися на скасований акт цього рахунку")
+	return current
+
+
+def issue_act(doc):
+	validate_act(doc, issue=True)
+	prefix = f"{doc.issuer}-ACT-{getdate(doc.posting_date).year}-"
+	doc.print_number = prefix + getseries(prefix, 5)
+
+
+def cancel_act(doc):
+	record("UA Invoice", doc.invoice, lock=True)
+	lock_existing(doc, expected_status=1)
 	doc.period_key = None
 
 

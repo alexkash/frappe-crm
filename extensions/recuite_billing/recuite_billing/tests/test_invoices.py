@@ -1,4 +1,5 @@
 import json
+from unittest.mock import patch
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
@@ -7,6 +8,14 @@ from recuite_billing.tests.helpers import contract, issuer, organization, parall
 
 
 class TestInvoices(FrappeTestCase):
+	def setUp(self):
+		from recuite_billing.tests.helpers import pdf_bytes
+
+		super().setUp()
+		mock = patch("recuite_billing.printing.render_pdf_bytes", return_value=pdf_bytes())
+		mock.start()
+		self.addCleanup(mock.stop)
+
 	def test_locking_read_compatibility_does_not_commit_callers_changes_and_restores_mode(self):
 		frappe.db.rollback()
 		initial = frappe.db.sql("SELECT @@SESSION.innodb_snapshot_isolation")[0][0]

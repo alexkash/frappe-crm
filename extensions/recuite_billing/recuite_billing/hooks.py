@@ -21,3 +21,15 @@ permission_query_conditions = {
 	"UA Act": "recuite_billing.permissions.act_query_conditions",
 }
 override_doctype_class = {"File": "recuite_billing.overrides.file.BillingFile"}
+override_whitelisted_methods = {
+	"frappe.utils.print_format.download_pdf": "recuite_billing.printing.download_pdf",
+	"frappe.utils.print_format.download_multi_pdf": "recuite_billing.printing.download_multi_pdf",
+	"frappe.utils.print_format.download_multi_pdf_async": "recuite_billing.printing.download_multi_pdf_async",
+}
+pdf_body_html = "recuite_billing.printing.pdf_body_html"
+on_print_pdf = "recuite_billing.printing.prevent_archive_rerender"
+doctype_js = {
+	"UA Contract": "public/js/billing.js",
+	"UA Invoice": "public/js/billing.js",
+	"UA Act": "public/js/billing.js",
+}

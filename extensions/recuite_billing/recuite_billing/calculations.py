@@ -87,8 +87,10 @@ def allocate_act_items(
 			used[name][key] += number(row.get(key, 0), 6 if key == "qty" else 2)
 	result, seen = [], set()
 	for requested in requested_items:
+		if not isinstance(requested, dict):
+			raise ValueError("Позиція акта має містити рядок рахунку та кількість")
 		name = requested.get("invoice_item")
-		if name not in invoice or name in seen:
+		if not isinstance(name, str) or name not in invoice or name in seen:
 			raise ValueError("Unknown or duplicate invoice item")
 		seen.add(name)
 		source, previous = invoice[name], used[name]
