@@ -1,0 +1,12 @@
+.git
+.superpowers
+**/node_modules
+**/__pycache__
+**/*.pyc
+**/.env*
+**/*credentials*
+**/*secrets*
+test-results
+playwright-report
+frontend/coverage
+crm/public/frontend

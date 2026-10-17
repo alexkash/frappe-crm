@@ -1,0 +1,9 @@
+app_name = "recuite_billing"
+app_title = "Документи"
+app_publisher = "Recuite"
+app_description = "Ukrainian billing documents for Frappe CRM"
+app_email = "support@example.invalid"
+app_license = "MIT"
+required_apps = ["crm"]
+after_install = "recuite_billing.install.after_install"
+after_migrate = "recuite_billing.install.after_migrate"

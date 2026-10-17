@@ -1,0 +1,280 @@
+{
+ "doctype": "DocType",
+ "name": "UA Act",
+ "module": "Billing",
+ "engine": "InnoDB",
+ "custom": 0,
+ "track_changes": 1,
+ "allow_rename": 0,
+ "make_attachments_public": 0,
+ "field_order": [
+  "invoice",
+  "organization",
+  "issuer",
+  "bank_account",
+  "contract",
+  "deal",
+  "posting_date",
+  "period_from",
+  "period_to",
+  "items",
+  "net_total",
+  "vat_total",
+  "grand_total",
+  "print_number",
+  "party_snapshot",
+  "print_assets_snapshot",
+  "pdf_file",
+  "pdf_sha256",
+  "period_key",
+  "print_logo",
+  "logo_asset",
+  "print_signature",
+  "signature_asset",
+  "print_stamp",
+  "stamp_asset",
+  "place_of_issue",
+  "amended_from"
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "print": 1,
+   "export": 1,
+   "report": 1
+  },
+  {
+   "role": "UA Billing Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "print": 1,
+   "export": 1,
+   "report": 1
+  },
+  {
+   "role": "UA Billing User",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "print": 1,
+   "export": 1,
+   "report": 1
+  },
+  {
+   "role": "UA Billing Reader",
+   "read": 1,
+   "print": 1,
+   "export": 1,
+   "report": 1
+  }
+ ],
+ "actions": [],
+ "links": [],
+ "autoname": "hash",
+ "is_submittable": 1,
+ "title_field": "print_number",
+ "fields": [
+  {
+   "fieldname": "invoice",
+   "fieldtype": "Link",
+   "label": "Рахунок",
+   "options": "UA Invoice",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "organization",
+   "fieldtype": "Link",
+   "label": "Компанія-замовник",
+   "options": "CRM Organization",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "issuer",
+   "fieldtype": "Link",
+   "label": "Наш ФОП / ТОВ",
+   "options": "UA Issuer",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "bank_account",
+   "fieldtype": "Select",
+   "label": "Банківський рахунок",
+   "options": ""
+  },
+  {
+   "fieldname": "contract",
+   "fieldtype": "Link",
+   "label": "Договір",
+   "options": "UA Contract"
+  },
+  {
+   "fieldname": "deal",
+   "fieldtype": "Link",
+   "label": "Угода CRM",
+   "options": "CRM Deal"
+  },
+  {
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Дата документа",
+   "reqd": 1,
+   "default": "Today",
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "period_from",
+   "fieldtype": "Date",
+   "label": "Період з",
+   "reqd": 1
+  },
+  {
+   "fieldname": "period_to",
+   "fieldtype": "Date",
+   "label": "Період до",
+   "reqd": 1
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Позиції",
+   "options": "UA Billing Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "net_total",
+   "fieldtype": "Currency",
+   "label": "Всього без ПДВ",
+   "options": "UAH",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "vat_total",
+   "fieldtype": "Currency",
+   "label": "ПДВ",
+   "options": "UAH",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "grand_total",
+   "fieldtype": "Currency",
+   "label": "Всього до сплати",
+   "options": "UAH",
+   "precision": "2",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "print_number",
+   "fieldtype": "Data",
+   "label": "Номер документа",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "party_snapshot",
+   "fieldtype": "Code",
+   "label": "Збережені реквізити",
+   "options": "JSON",
+   "hidden": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "print_assets_snapshot",
+   "fieldtype": "Code",
+   "label": "Збережені зображення",
+   "options": "JSON",
+   "hidden": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "pdf_file",
+   "fieldtype": "Link",
+   "label": "Архівний PDF",
+   "options": "File",
+   "read_only": 1,
+   "hidden": 1
+  },
+  {
+   "fieldname": "pdf_sha256",
+   "fieldtype": "Data",
+   "label": "PDF SHA-256",
+   "read_only": 1,
+   "hidden": 1
+  },
+  {
+   "fieldname": "period_key",
+   "fieldtype": "Data",
+   "label": "Ключ періоду",
+   "unique": 1,
+   "hidden": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "print_logo",
+   "fieldtype": "Check",
+   "label": "Додати логотип",
+   "default": "0"
+  },
+  {
+   "fieldname": "logo_asset",
+   "fieldtype": "Link",
+   "label": "Логотип",
+   "options": "UA Print Asset"
+  },
+  {
+   "fieldname": "print_signature",
+   "fieldtype": "Check",
+   "label": "Додати скан підпису",
+   "default": "0"
+  },
+  {
+   "fieldname": "signature_asset",
+   "fieldtype": "Link",
+   "label": "Підпис",
+   "options": "UA Print Asset"
+  },
+  {
+   "fieldname": "print_stamp",
+   "fieldtype": "Check",
+   "label": "Додати скан печатки",
+   "default": "0"
+  },
+  {
+   "fieldname": "stamp_asset",
+   "fieldtype": "Link",
+   "label": "Печатка",
+   "options": "UA Print Asset"
+  },
+  {
+   "fieldname": "place_of_issue",
+   "fieldtype": "Data",
+   "label": "Місце складання"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Редакція замість",
+   "options": "UA Act",
+   "read_only": 1,
+   "no_copy": 1
+  }
+ ]
+}

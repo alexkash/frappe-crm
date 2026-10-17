@@ -1,0 +1,93 @@
+name: recuite-billing-test
+
+x-app: &app
+  image: recuite/billing-test:local
+  platform: linux/amd64
+  restart: "no"
+  environment:
+    PYTHONDONTWRITEBYTECODE: "1"
+  volumes:
+    - sites:/home/frappe/frappe-bench/sites
+    - logs:/home/frappe/frappe-bench/logs
+    - ${BILLING_TEST_SOURCE_PATH:?required}/extensions/recuite_billing:/home/frappe/frappe-bench/apps/recuite_billing:ro
+    - ${BILLING_TEST_SOURCE_PATH:?required}/ops/recuite/billing-test:/opt/billing-test:ro
+  networks: [billing]
+
+services:
+  db:
+    image: mariadb:11.8
+    mem_limit: 384m
+    cpus: 0.5
+    environment:
+      MARIADB_ROOT_PASSWORD: ${BILLING_TEST_DB_PASSWORD:?required}
+    command: [--character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci]
+    volumes: [database:/var/lib/mysql]
+    networks: [billing]
+    healthcheck:
+      test: [CMD, healthcheck.sh, --connect, --innodb_initialized]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+  redis-cache:
+    image: redis:8.6-alpine
+    mem_limit: 64m
+    networks: [billing]
+    command: [redis-server, --save, "", --appendonly, "no"]
+  redis-queue:
+    image: redis:8.6-alpine
+    mem_limit: 64m
+    networks: [billing]
+    command: [redis-server, --save, "", --appendonly, "no"]
+  bootstrap:
+    <<: *app
+    mem_limit: 1024m
+    cpus: 1
+    working_dir: /home/frappe/frappe-bench/sites
+    entrypoint: [/home/frappe/frappe-bench/env/bin/python]
+    command: [/opt/billing-test/bootstrap.py]
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+      BILLING_TEST_DB_PASSWORD: ${BILLING_TEST_DB_PASSWORD:?required}
+      BILLING_TEST_ADMIN_PASSWORD: ${BILLING_TEST_ADMIN_PASSWORD:?required}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_started
+      redis-queue:
+        condition: service_started
+  backend:
+    <<: *app
+    mem_limit: 512m
+    cpus: 1
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+      GUNICORN_WORKERS: "2"
+      GUNICORN_THREADS: "2"
+  websocket:
+    <<: *app
+    mem_limit: 128m
+    command: node /home/frappe/frappe-bench/apps/frappe/socketio.js
+  frontend:
+    <<: *app
+    mem_limit: 96m
+    command: nginx-entrypoint.sh
+    environment:
+      BACKEND: backend:8000
+      SOCKETIO: websocket:9000
+      NGINX_LISTEN_PORT: "18082"
+      FRAPPE_SITE_NAME_HEADER: test_site
+    ports: ["127.0.0.1:18082:18082"]
+    networks:
+      billing:
+        aliases: [billing-test.localhost]
+    depends_on: [backend, websocket]
+
+networks:
+  billing:
+    internal: true
+
+volumes:
+  sites:
+  logs:
+  database:

@@ -1,0 +1,137 @@
+{
+ "doctype": "DocType",
+ "name": "UA Billing Item",
+ "module": "Billing",
+ "engine": "InnoDB",
+ "custom": 0,
+ "track_changes": 1,
+ "allow_rename": 0,
+ "make_attachments_public": 0,
+ "field_order": [
+  "product_code",
+  "product_name",
+  "description",
+  "uom",
+  "qty",
+  "net_rate",
+  "vat_mode",
+  "vat_rate",
+  "vat_basis",
+  "net_amount",
+  "vat_amount",
+  "gross_amount",
+  "rounding_adjustment",
+  "invoice_item"
+ ],
+ "permissions": [],
+ "actions": [],
+ "links": [],
+ "istable": 1,
+ "fields": [
+  {
+   "fieldname": "product_code",
+   "fieldtype": "Link",
+   "label": "Продукт / послуга",
+   "options": "CRM Product",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "product_name",
+   "fieldtype": "Data",
+   "label": "Назва",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Опис"
+  },
+  {
+   "fieldname": "uom",
+   "fieldtype": "Data",
+   "label": "Одиниця",
+   "reqd": 1,
+   "default": "послуга"
+  },
+  {
+   "fieldname": "qty",
+   "fieldtype": "Float",
+   "label": "Кількість",
+   "precision": "6",
+   "reqd": 1,
+   "in_list_view": 1,
+   "default": "1"
+  },
+  {
+   "fieldname": "net_rate",
+   "fieldtype": "Currency",
+   "label": "Ціна без ПДВ",
+   "options": "UAH",
+   "precision": "4",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "vat_mode",
+   "fieldtype": "Select",
+   "label": "Режим ПДВ",
+   "options": "Без ПДВ\nПДВ\nЗвільнено",
+   "default": "Без ПДВ",
+   "reqd": 1
+  },
+  {
+   "fieldname": "vat_rate",
+   "fieldtype": "Select",
+   "label": "Ставка ПДВ",
+   "options": "0\n7\n14\n20",
+   "default": "0"
+  },
+  {
+   "fieldname": "vat_basis",
+   "fieldtype": "Small Text",
+   "label": "Підстава нульової ставки / звільнення"
+  },
+  {
+   "fieldname": "net_amount",
+   "fieldtype": "Currency",
+   "label": "Сума без ПДВ",
+   "options": "UAH",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "vat_amount",
+   "fieldtype": "Currency",
+   "label": "ПДВ",
+   "options": "UAH",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "gross_amount",
+   "fieldtype": "Currency",
+   "label": "Сума з ПДВ",
+   "options": "UAH",
+   "precision": "2",
+   "read_only": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "rounding_adjustment",
+   "fieldtype": "Currency",
+   "label": "Коригування округлення",
+   "options": "UAH",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "invoice_item",
+   "fieldtype": "Data",
+   "label": "Рядок рахунку",
+   "read_only": 1,
+   "hidden": 1
+  }
+ ]
+}

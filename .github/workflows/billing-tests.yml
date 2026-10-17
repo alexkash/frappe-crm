@@ -1,0 +1,44 @@
+name: Ukrainian billing
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - extensions/recuite_billing/**
+      - ops/recuite/billing-test/**
+      - crm/api/billing.py
+      - .github/workflows/billing-tests.yml
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create isolated synthetic credentials
+        run: |
+          python3 - <<'PY'
+          import os, secrets
+          from pathlib import Path
+          path = Path(os.environ['RUNNER_TEMP']) / 'billing-test.env'
+          with path.open('x') as stream:
+              os.chmod(path, 0o600)
+              stream.write('BILLING_TEST_DB_PASSWORD=' + secrets.token_hex(24) + '\n')
+              stream.write('BILLING_TEST_ADMIN_PASSWORD=' + secrets.token_hex(24) + '\n')
+              stream.write('BILLING_TEST_SOURCE_PATH=' + os.environ['GITHUB_WORKSPACE'] + '\n')
+          PY
+      - name: Verify test guard
+        run: python3 -m unittest discover -s ops/recuite/billing-test/tests -v
+      - name: Build pinned runtime with current CRM source
+        run: docker build -f ops/recuite/billing-test/Dockerfile -t recuite/billing-test:local .
+      - name: Initialize isolated site and run billing tests
+        run: |
+          set -euo pipefail
+          compose=(docker compose --env-file "$RUNNER_TEMP/billing-test.env" -f ops/recuite/billing-test/compose.yaml)
+          "${compose[@]}" config --quiet
+          "${compose[@]}" up -d db redis-cache redis-queue
+          "${compose[@]}" run --rm -T bootstrap
+          "${compose[@]}" run --rm -T --entrypoint /home/frappe/frappe-bench/env/bin/python backend /opt/billing-test/run_tests.py
+      - name: Stop this runner's test project
+        if: always()
+        run: docker compose --env-file "$RUNNER_TEMP/billing-test.env" -f ops/recuite/billing-test/compose.yaml down

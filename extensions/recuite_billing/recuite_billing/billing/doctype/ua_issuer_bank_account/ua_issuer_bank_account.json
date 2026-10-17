@@ -1,0 +1,46 @@
+{
+ "doctype": "DocType",
+ "name": "UA Issuer Bank Account",
+ "module": "Billing",
+ "engine": "InnoDB",
+ "custom": 0,
+ "track_changes": 1,
+ "allow_rename": 0,
+ "make_attachments_public": 0,
+ "field_order": [
+  "iban",
+  "bank_name",
+  "bank_mfo",
+  "is_default"
+ ],
+ "permissions": [],
+ "actions": [],
+ "links": [],
+ "istable": 1,
+ "fields": [
+  {
+   "fieldname": "iban",
+   "fieldtype": "Data",
+   "label": "IBAN",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "bank_name",
+   "fieldtype": "Data",
+   "label": "Банк",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "bank_mfo",
+   "fieldtype": "Data",
+   "label": "МФО"
+  },
+  {
+   "fieldname": "is_default",
+   "fieldtype": "Check",
+   "label": "За замовчуванням"
+  }
+ ]
+}
