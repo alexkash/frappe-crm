@@ -93,7 +93,8 @@
    "label": "Рахунок",
    "options": "UA Invoice",
    "reqd": 1,
-   "in_list_view": 1
+   "in_list_view": 1,
+   "search_index": 1
   },
   {
    "fieldname": "organization",
@@ -101,7 +102,8 @@
    "label": "Компанія-замовник",
    "options": "CRM Organization",
    "reqd": 1,
-   "in_list_view": 1
+   "in_list_view": 1,
+   "search_index": 1
   },
   {
    "fieldname": "issuer",
@@ -109,7 +111,8 @@
    "label": "Наш ФОП / ТОВ",
    "options": "UA Issuer",
    "reqd": 1,
-   "in_list_view": 1
+   "in_list_view": 1,
+   "search_index": 1
   },
   {
    "fieldname": "bank_account",
@@ -121,7 +124,8 @@
    "fieldname": "contract",
    "fieldtype": "Link",
    "label": "Договір",
-   "options": "UA Contract"
+   "options": "UA Contract",
+   "search_index": 1
   },
   {
    "fieldname": "deal",
@@ -186,7 +190,8 @@
    "fieldtype": "Data",
    "label": "Номер документа",
    "read_only": 1,
-   "in_list_view": 1
+   "in_list_view": 1,
+   "no_copy": 1
   },
   {
    "fieldname": "party_snapshot",
@@ -194,7 +199,8 @@
    "label": "Збережені реквізити",
    "options": "JSON",
    "hidden": 1,
-   "read_only": 1
+   "read_only": 1,
+   "no_copy": 1
   },
   {
    "fieldname": "print_assets_snapshot",
@@ -202,7 +208,8 @@
    "label": "Збережені зображення",
    "options": "JSON",
    "hidden": 1,
-   "read_only": 1
+   "read_only": 1,
+   "no_copy": 1
   },
   {
    "fieldname": "pdf_file",
@@ -210,14 +217,16 @@
    "label": "Архівний PDF",
    "options": "File",
    "read_only": 1,
-   "hidden": 1
+   "hidden": 1,
+   "no_copy": 1
   },
   {
    "fieldname": "pdf_sha256",
    "fieldtype": "Data",
    "label": "PDF SHA-256",
    "read_only": 1,
-   "hidden": 1
+   "hidden": 1,
+   "no_copy": 1
   },
   {
    "fieldname": "period_key",
@@ -225,43 +234,50 @@
    "label": "Ключ періоду",
    "unique": 1,
    "hidden": 1,
-   "read_only": 1
+   "read_only": 1,
+   "no_copy": 1
   },
   {
    "fieldname": "print_logo",
    "fieldtype": "Check",
    "label": "Додати логотип",
-   "default": "0"
+   "default": "0",
+   "no_copy": 1
   },
   {
    "fieldname": "logo_asset",
    "fieldtype": "Link",
    "label": "Логотип",
-   "options": "UA Print Asset"
+   "options": "UA Print Asset",
+   "no_copy": 1
   },
   {
    "fieldname": "print_signature",
    "fieldtype": "Check",
    "label": "Додати скан підпису",
-   "default": "0"
+   "default": "0",
+   "no_copy": 1
   },
   {
    "fieldname": "signature_asset",
    "fieldtype": "Link",
    "label": "Підпис",
-   "options": "UA Print Asset"
+   "options": "UA Print Asset",
+   "no_copy": 1
   },
   {
    "fieldname": "print_stamp",
    "fieldtype": "Check",
    "label": "Додати скан печатки",
-   "default": "0"
+   "default": "0",
+   "no_copy": 1
   },
   {
    "fieldname": "stamp_asset",
    "fieldtype": "Link",
    "label": "Печатка",
-   "options": "UA Print Asset"
+   "options": "UA Print Asset",
+   "no_copy": 1
   },
   {
    "fieldname": "place_of_issue",

@@ -3,11 +3,13 @@ import re
 import frappe
 from frappe.model.document import Document
 
+from recuite_billing.permissions import assert_owned_rows
 from recuite_billing.validations import validate_iban, validate_registration_code
 
 
 class UAIssuer(Document):
 	def validate(self):
+		assert_owned_rows(self, "bank_accounts")
 		if not re.fullmatch(r"[\w-]{1,20}", str(self.issuer_code or ""), re.UNICODE):
 			frappe.throw("Код виконавця: до 20 літер/цифр, дефіс або підкреслення")
 		old = self.get_doc_before_save()

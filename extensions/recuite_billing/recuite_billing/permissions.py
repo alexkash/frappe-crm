@@ -20,6 +20,7 @@ def has_document_permission(doc, ptype=None, user=None):
 	user = user or frappe.session.user
 	if user == "Administrator" or "System Manager" in frappe.get_roles(user):
 		return None
+	# Incoming party fields are caller-controlled; mutations must also authorize the saved record.
 	if (
 		ptype in {"write", "delete", "submit", "cancel", "amend", "share"}
 		and doc.name
@@ -93,3 +94,21 @@ def has_file_permission(doc, ptype=None, user=None):
 	):
 		return False
 	return None
+
+
+def assert_owned_rows(doc, fieldname):
+	child_type = doc.meta.get_field(fieldname).options
+	for row in doc.get(fieldname) or []:
+		if not row.name:
+			continue
+		saved = frappe.db.get_value(
+			child_type, row.name, ["parent", "parenttype", "parentfield"], as_dict=True
+		)
+		if saved and (saved.parent, saved.parenttype, saved.parentfield) != (
+			doc.name,
+			doc.doctype,
+			fieldname,
+		):
+			frappe.throw(
+				"Рядок належить іншому документу; додайте новий рядок замість перенесення його ідентифікатора"
+			)

@@ -5,6 +5,24 @@ from recuite_billing.tests.helpers import as_user, contract, issuer, user
 
 
 class TestBillingPermissions(FrappeTestCase):
+	def test_cannot_move_a_bank_child_row_from_another_issuer(self):
+		first, second = issuer(), issuer()
+		account = user("UA Billing Manager", second.name)
+		payload = second.as_dict()
+		payload["bank_accounts"][0]["name"] = first.bank_accounts[0].name
+		with as_user(account), self.assertRaises(frappe.ValidationError):
+			frappe.get_doc(payload).save()
+		self.assertEqual(
+			frappe.db.get_value("UA Issuer Bank Account", first.bank_accounts[0].name, "parent"), first.name
+		)
+
+	def test_direct_bank_child_updates_cannot_bypass_issuer_validation(self):
+		doc = issuer()
+		row = frappe.get_doc("UA Issuer Bank Account", doc.bank_accounts[0].name)
+		row.iban = "not-an-iban"
+		with self.assertRaises(frappe.ValidationError):
+			row.save()
+
 	def test_cannot_take_over_an_existing_contract_by_spoofing_its_issuer(self):
 		first, second = issuer(), issuer()
 		doc = contract(owner=first)

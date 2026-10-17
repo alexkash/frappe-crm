@@ -1,5 +1,7 @@
 from contextlib import contextmanager
 from io import BytesIO
+from pathlib import Path
+from threading import Barrier, Thread
 
 import frappe
 
@@ -131,3 +133,40 @@ def as_user(name):
 		yield
 	finally:
 		frappe.set_user(previous)
+
+
+def parallel_requests(functions, *, account, snapshot_contract):
+	"""Separate real connections with a pre-existing snapshot, as in an HTTP request."""
+	site, sites = frappe.local.site, str(Path(frappe.get_site_path()).resolve().parent)
+	barrier = Barrier(len(functions))
+	results, errors = [None] * len(functions), []
+	frappe.db.commit()
+
+	def run(index, function):
+		try:
+			frappe.init(site=site, sites_path=sites)
+			frappe.connect()
+			frappe.set_user(account)
+			frappe.db.sql("select count(*) from `tabUA Invoice` where contract=%s", snapshot_contract)
+			barrier.wait(timeout=10)
+			results[index] = function()
+			frappe.db.commit()
+		except Exception as error:
+			frappe.db.rollback()
+			errors.append(error)
+		finally:
+			frappe.destroy()
+
+	threads = [
+		Thread(target=run, args=(index, function), daemon=True) for index, function in enumerate(functions)
+	]
+	for thread in threads:
+		thread.start()
+	for thread in threads:
+		thread.join(timeout=30)
+	if any(thread.is_alive() for thread in threads):
+		raise AssertionError("Concurrent billing request did not finish")
+	frappe.db.rollback()
+	if errors:
+		raise errors[0]
+	return results
