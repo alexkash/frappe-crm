@@ -48,3 +48,19 @@ for the other pure modules.
 Stop only this Compose project when finished. Keep its volumes and failure
 evidence; deleting them is an explicit cleanup decision. Never use global Docker
 prune or production/migration resource names for test cleanup.
+
+User workflow: [Українські рахунки та акти](../../docs/feats/ua-billing.md).
+
+The locally compiled runtime overlay expects `ops/recuite/billing-test/.frontend-build/`
+containing the output of `yarn --cwd frontend build` (`crm/public/frontend/`).
+Use a new tag for each reviewed image and set `BILLING_TEST_IMAGE` for Compose.
+This overlay verifies current Python and compiled assets without rebuilding the
+large frontend on a small shared VPS. The clean CI Dockerfile installs the locked
+frontend dependencies and builds from source. Neither process deploys production.
+
+`qa_acceptance.py` creates only synthetic test documents and exports PDFs into the
+private `test_site/private/billing-qa` directory. `qa_restore.py` refuses an existing
+restore target, backs up this isolated site's database/public/private files and
+verifies hashes, images, contract attachment and roles in `billing_restore_test`.
+Run the restore script through the `bootstrap` service (override its command), so
+only that disposable process receives the new test database/admin credentials.

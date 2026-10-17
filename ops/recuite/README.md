@@ -69,3 +69,27 @@ the previous Django repository because this directory is an existing worktree.
 Other worktrees retain their Django branches. Fetch upstream Frappe changes
 through `frappe-upstream`; review and test before updating the pinned image.
 The fork's image workflow uses this same Dockerfile and its own source ref.
+
+## Ukrainian billing rollout (separate approval required)
+
+The source Dockerfile now requires an explicit `CRM_REF` containing the reviewed
+billing extension. Do not build the previous release ref or deploy the test image
+on top of newer migration/communications work. First integrate and review both
+branches on the current CRM baseline; keep outbound communication restrictions.
+
+Before production installation, agree the exact secret/backup access manifest,
+private backup location, operators/roles and write freeze. Back up DB, public and
+private files plus site configuration/encryption key; prove restore in a separate
+private site. Record the built immutable image digest and prior image digest.
+
+After explicit deployment approval: install the reviewed image, run
+`bench --site crm.recuite.com install-app recuite_billing`, migrate, and restart
+only the agreed app services. Verify company access, catalog, issuer profiles,
+private contract attachment and a separately approved document workflow. Do not
+create synthetic records on production.
+
+Before first billing writes, rollback means the prior image and verified backup
+within the agreed freeze. After new financial data exists, stop writes and prefer
+a forward fix; restoring an older DB requires separate approval acknowledging the
+new data it would discard. Never automatically uninstall billing, drop volumes,
+reuse test credentials, enable sending, or migrate historical financial records.
