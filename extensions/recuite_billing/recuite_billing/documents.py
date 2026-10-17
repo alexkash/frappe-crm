@@ -158,6 +158,7 @@ def _set_invoice_snapshot(doc, snapshot, source):
 		"date": str(doc.posting_date),
 		"period_from": str(doc.period_from),
 		"period_to": str(doc.period_to),
+		"service_anchor": str(source.start_date if source else doc.period_from),
 	}
 	snapshot["contract"] = (
 		{"number": source.contract_number, "date": str(source.contract_date), "name": source.name}
@@ -235,7 +236,7 @@ def issue_invoice(doc):
 
 
 def cancel_invoice(doc):
-	lock_existing(doc, expected_status=1)
+	assert_cancel_unchanged(doc, lock_existing(doc, expected_status=1))
 	if frappe.db.get_values(
 		"UA Act", {"invoice": doc.name, "docstatus": 1}, "name", for_update=True, limit=1
 	):
@@ -315,8 +316,21 @@ def issue_act(doc):
 
 def cancel_act(doc):
 	record("UA Invoice", doc.invoice, lock=True)
-	lock_existing(doc, expected_status=1)
+	assert_cancel_unchanged(doc, lock_existing(doc, expected_status=1))
 	doc.period_key = None
+
+
+def assert_cancel_unchanged(doc, current):
+	def business_values(value):
+		fields = value.get_valid_dict()
+		for field in ("modified", "modified_by", "docstatus"):
+			fields.pop(field, None)
+		for field in value.meta.get_table_fields():
+			fields[field.fieldname] = [business_values(row) for row in value.get(field.fieldname) or []]
+		return fields
+
+	if frappe.as_json(business_values(doc)) != frappe.as_json(business_values(current)):
+		frappe.throw("Під час скасування не можна змінювати реквізити, позиції або архів документа")
 
 
 def forbid_final_update(doc):

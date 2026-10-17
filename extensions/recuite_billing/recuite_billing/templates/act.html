@@ -13,7 +13,7 @@
   <p>Період надання послуг: {{ date_uk(doc.period_from) }} — {{ date_uk(doc.period_to) }}.</p>
   <table class="act-services">
     {% for row in items %}
-    <tr><td class="details">{{ row.product_name | e }}{% if row.description and row.description != row.product_name %}<br>{{ row.description | e }}{% endif %}</td><td class="number">{{ money_uk(row.net_amount) }} грн.<br><span class="muted">сума без ПДВ</span></td></tr>
+    <tr><td class="details">{{ row.product_name | e }}{% if row.description and row.description != row.product_name %}<br>{{ row.description | e }}{% endif %}{% set note = rounding_note(row) %}{% if note %}<br><span class="muted">{{ note | e }}</span>{% endif %}</td><td class="number">{{ money_uk(row.net_amount) }} грн.<br><span class="muted">сума без ПДВ</span></td></tr>
     {% endfor %}
   </table>
   <div class="final-block">

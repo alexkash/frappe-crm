@@ -42,3 +42,21 @@ class TestBillingAPI(FrappeTestCase):
 		create_invoice(source.name, **period)
 		period = get_period_suggestion("UA Contract", source.name)
 		self.assertEqual(period["period_from"], "2026-04-01")
+
+	def test_monthly_act_suggestions_keep_contract_anchor_across_quarters(self):
+		from unittest.mock import patch
+
+		from recuite_billing.api import create_invoice, get_act_items, get_period_suggestion
+		from recuite_billing.tests.helpers import pdf_bytes
+
+		source = contract(qty=3, cadence="Quarterly")
+		source.start_date, source.end_date = "2026-01-31", "2027-01-30"
+		source.save()
+		invoice = frappe.get_doc(
+			"UA Invoice", create_invoice(source.name, "2026-04-30", "2026-07-30")["name"]
+		)
+		with patch("recuite_billing.printing.render_pdf_bytes", return_value=pdf_bytes()):
+			invoice.submit()
+		period = get_period_suggestion("UA Invoice", invoice.name)
+		self.assertEqual(period, {"period_from": "2026-04-30", "period_to": "2026-05-30"})
+		self.assertEqual(get_act_items(invoice.name)[0]["qty"], "1.000000")

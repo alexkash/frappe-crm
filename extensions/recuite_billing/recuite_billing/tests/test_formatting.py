@@ -16,3 +16,18 @@ class TestPrintFormatting(unittest.TestCase):
 		self.assertEqual(date_uk("2026-08-03"), "03 серпня 2026 року")
 		self.assertEqual(date_uk("2025-08-04"), "04 серпня 2025 року")
 		self.assertEqual(date_uk(None), "")
+
+	def test_explains_penny_allocation_in_net_and_vat(self):
+		from recuite_billing.formatting import rounding_note
+
+		row = {
+			"qty": 1,
+			"net_rate": "0.03",
+			"vat_mode": "ПДВ",
+			"vat_rate": 20,
+			"net_amount": "0.03",
+			"vat_amount": "0.00",
+		}
+		self.assertIn("ПДВ -0,01 грн", rounding_note(row))
+		row["vat_amount"] = "0.01"
+		self.assertEqual(rounding_note(row), "")

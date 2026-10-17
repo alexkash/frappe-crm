@@ -12,7 +12,7 @@ from pypdf import PdfReader, PdfWriter
 from recuite_billing.amount_in_words import amount_in_words_uk
 from recuite_billing.attachments import archival_write
 from recuite_billing.documents import record
-from recuite_billing.formatting import date_uk, money_uk, quantity_uk, rate_uk
+from recuite_billing.formatting import date_uk, money_uk, quantity_uk, rate_uk, rounding_note
 from recuite_billing.print_assets import get_print_images, snapshot_print_assets
 
 DOCUMENTS = {"UA Invoice", "UA Act"}
@@ -48,6 +48,7 @@ def render_html(doc, *, preview=False):
 		rate_uk=rate_uk,
 		quantity_uk=quantity_uk,
 		amount_in_words_uk=amount_in_words_uk,
+		rounding_note=rounding_note,
 	)
 
 
@@ -111,12 +112,12 @@ def get_document_pdf(doctype, name):
 	return file
 
 
-@frappe.whitelist()
+@frappe.whitelist(allow_guest=True)
 def download_pdf(doctype, name, **kwargs):
 	if doctype not in DOCUMENTS:
 		from frappe.utils.print_format import download_pdf as native
 
-		return native(doctype, name, **kwargs)
+		return frappe.call(native, doctype=doctype, name=name, **kwargs)
 	doc = record(doctype, name)
 	doc.check_permission("print")
 	content = (

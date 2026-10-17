@@ -250,3 +250,35 @@ class TestPrinting(FrappeTestCase):
 			amended.submit()
 		self.assertNotEqual(invoice.pdf_file, amended.pdf_file)
 		self.assertNotEqual(invoice.print_number, amended.print_number)
+
+	def test_cancel_rejects_mutating_financial_history(self):
+		from recuite_billing.api import create_act
+
+		invoice = self.draft()
+		with patch("recuite_billing.printing.render_pdf_bytes", return_value=pdf_bytes()):
+			invoice.submit()
+		act = frappe.get_doc(
+			"UA Act",
+			create_act(
+				invoice.name, "2026-01-01", "2026-01-31", [{"invoice_item": invoice.items[0].name, "qty": 1}]
+			)["name"],
+		)
+		with patch("recuite_billing.printing.render_pdf_bytes", return_value=pdf_bytes()):
+			act.submit()
+		from frappe.client import save
+
+		payload = act.as_dict()
+		payload["docstatus"] = 2
+		payload["items"][0]["qty"] = 0.5
+		with self.assertRaises(frappe.ValidationError):
+			save(payload)
+		act.reload().cancel()
+		payload = invoice.as_dict()
+		payload["docstatus"], payload["party_snapshot"] = 2, "{}"
+		with self.assertRaises(frappe.ValidationError):
+			save(payload)
+
+	def test_non_billing_pdf_retains_native_guest_route_metadata(self):
+		from recuite_billing.printing import download_pdf
+
+		self.assertIn(download_pdf, frappe.guest_methods)

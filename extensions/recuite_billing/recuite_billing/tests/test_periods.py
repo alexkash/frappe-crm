@@ -52,3 +52,20 @@ class TestPeriods(unittest.TestCase):
 		for cadence, index in [("Unknown", 0), ("Monthly", -1), ("Monthly", True)]:
 			with self.assertRaises(ValueError):
 				period_for_index(date(2026, 1, 1), date(2026, 12, 31), cadence, index)
+
+
+class TestActSchedule(unittest.TestCase):
+	def test_monthly_grid_keeps_original_day_after_shorter_quarter_start(self):
+		from recuite_billing.periods import periods_in_range
+
+		for year in (2026, 2028):
+			with self.subTest(year=year):
+				periods = periods_in_range(date(year, 1, 31), date(year, 4, 30), date(year, 7, 30), "Monthly")
+				self.assertEqual(
+					periods,
+					[
+						(date(year, 4, 30), date(year, 5, 30)),
+						(date(year, 5, 31), date(year, 6, 29)),
+						(date(year, 6, 30), date(year, 7, 30)),
+					],
+				)

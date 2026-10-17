@@ -1,3 +1,5 @@
+import json
+
 import frappe
 
 from recuite_billing.documents import ITEM_FIELDS, active_periods, dates, record
@@ -107,7 +109,7 @@ def get_organization_documents(organization: str, kind: str, start: int = 0, pag
 def get_period_suggestion(doctype: str, name: str) -> dict:
 	from frappe.utils import getdate
 
-	from recuite_billing.periods import period_for_index
+	from recuite_billing.periods import periods_in_range
 
 	if doctype not in {"UA Contract", "UA Invoice"}:
 		frappe.throw("Невідоме джерело періодів")
@@ -134,15 +136,17 @@ def get_period_suggestion(doctype: str, name: str) -> dict:
 		fields=["period_from", "period_to"],
 		page_length=0,
 	)
-	for index in range(1200):
-		period = period_for_index(getdate(first), getdate(last), cadence, index)
-		if period is None:
-			return {}
+	anchor = getdate(first) if doctype == "UA Contract" else _service_anchor(source)
+	try:
+		schedule = periods_in_range(anchor, getdate(first), getdate(last), cadence)
+	except ValueError as exc:
+		frappe.throw(str(exc))
+	for period in schedule:
 		if not any(
 			getdate(row.period_from) <= period[1] and getdate(row.period_to) >= period[0] for row in periods
 		):
 			return {"period_from": period[0].isoformat(), "period_to": period[1].isoformat()}
-	frappe.throw("Завеликий діапазон періодів; вкажіть період вручну")
+	return {}
 
 
 @frappe.whitelist()
@@ -151,7 +155,7 @@ def get_act_items(invoice: str) -> list:
 
 	from frappe.utils import getdate
 
-	from recuite_billing.periods import period_for_index
+	from recuite_billing.periods import periods_in_range
 
 	source = record("UA Invoice", invoice, lock=True)
 	if source.docstatus != 1:
@@ -170,11 +174,17 @@ def get_act_items(invoice: str) -> list:
 		if acts
 		else []
 	)
-	count = 0
-	while period_for_index(getdate(source.period_from), getdate(source.period_to), source.act_cadence, count):
-		count += 1
-		if count >= 1200:
-			break
+	try:
+		count = len(
+			periods_in_range(
+				_service_anchor(source),
+				getdate(source.period_from),
+				getdate(source.period_to),
+				source.act_cadence,
+			)
+		)
+	except ValueError as exc:
+		frappe.throw(str(exc))
 	result = []
 	for row in source.items:
 		remaining = Decimal(str(row.qty)) - sum(
@@ -196,3 +206,12 @@ def get_act_items(invoice: str) -> list:
 				}
 			)
 	return result
+
+
+def _service_anchor(invoice):
+	from frappe.utils import getdate
+
+	return getdate(
+		json.loads(invoice.party_snapshot or "{}").get("invoice", {}).get("service_anchor")
+		or invoice.period_from
+	)

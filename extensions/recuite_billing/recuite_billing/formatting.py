@@ -47,3 +47,18 @@ def date_uk(value):
 		return ""
 	value = value if isinstance(value, date) else date.fromisoformat(str(value))
 	return f"{value.day:02d} {MONTHS[value.month - 1]} {value.year} року"
+
+
+def rounding_note(row):
+	from recuite_billing.calculations import money
+
+	net = money(_decimal(row.get("qty")) * _decimal(row.get("net_rate")))
+	vat = money(net * _decimal(row.get("vat_rate")) / 100) if row.get("vat_mode") == "ПДВ" else Decimal(0)
+	changes = []
+	for label, delta in (
+		("без ПДВ", _decimal(row.get("net_amount")) - net),
+		("ПДВ", _decimal(row.get("vat_amount")) - vat),
+	):
+		if delta:
+			changes.append(f"{label} {money_uk(delta)} грн")
+	return "Розподіл округлення: " + "; ".join(changes) + "." if changes else ""

@@ -40,3 +40,16 @@ def is_partial_period(start: date, end: date, cadence: str, first: date, last: d
 	return first != _boundary(start, months, index) or last != _boundary(
 		start, months, index + 1
 	) - timedelta(days=1)
+
+
+def periods_in_range(anchor: date, first: date, last: date, cadence: str) -> list[tuple[date, date]]:
+	if not anchor <= first <= last:
+		raise ValueError("Invalid service period")
+	result = []
+	for index in range(1200):
+		period = period_for_index(anchor, last, cadence, index)
+		if period is None:
+			return result
+		if period[1] >= first:
+			result.append((max(first, period[0]), period[1]))
+	raise ValueError("Service period exceeds supported range")
