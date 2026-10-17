@@ -51,10 +51,32 @@ cutover. No SuiteCRM migration in this change.
 - [x] Commit and push the old changes; preserve the deployed authentication source in the final old tag.
 - [x] Create `alexkash/frappe-crm`; switch this worktree to stable upstream CRM.
 - [x] Enumerate and export the six environment files plus long-lived DB/runtime keys; compare copies.
-- [ ] Validate `ops/recuite/compose.yaml` with a protected generated env file, inspect baked image scripts and review independently.
-- [ ] Run upstream `cd frontend && yarn test:run` using its documented sibling Frappe UI dependency.
-- [ ] Install the new services under `/opt/frappe-crm`, create `crm.recuite.com`, keep email/scheduler paused during initialization.
-- [ ] Verify internal ping/login/assets and empty CRM tables; configure Cloudflare SMTP with SSL465 and validate authentication without mail delivery.
-- [ ] Copy and verify Caddy TLS state, switch the proxy, verify authenticated HTTPS and background health; enable normal background/mail operation.
-- [ ] Export new Frappe credentials/site encryption config, save non-secret deployment evidence and commit/push operational files to the fork.
-- [ ] Remove only old `/opt/crm`, enumerated old containers/volumes/networks/images and obsolete scheduled jobs; verify old resources are absent and Frappe still works.
+- [x] Validate `ops/recuite/compose.yaml` with a protected generated env file, inspect baked image scripts and review independently.
+- [x] Run upstream `cd frontend && yarn test:run` using its documented sibling Frappe UI dependency.
+- [x] Install the new services under `/opt/frappe-crm`, create `crm.recuite.com`, keep email/scheduler paused during initialization.
+- [x] Verify internal ping/login/assets and empty CRM tables; configure Cloudflare SMTP with SSL465 and validate authentication without mail delivery.
+- [x] Copy and verify Caddy TLS state, switch the proxy, verify authenticated HTTPS and background health; enable normal background/mail operation.
+- [x] Export new Frappe credentials/site encryption config, save non-secret deployment evidence and commit/push operational files to the fork.
+- [x] Remove only old `/opt/crm`, enumerated old containers/volumes/networks/images and obsolete scheduled jobs; verify old resources are absent and Frappe still works.
+
+## Completion evidence
+
+- Custom image built successfully; CRM 1.88.0 / Framework 15.123.1 and compiled
+  frontend entries verified in the running image.
+- The Framework CLI parses Python literals for `set-config -p`; production
+  configuration uses `True`/`False`.
+- Runtime validation caught demo records from the normal setup hook. The new site
+  was reinstalled before cutover; initialization now filters the exact demo task
+  while retaining the standard Framework setup stages. Final CRM/customer tables,
+  email queue and demo flags were checked empty; only Administrator/Guest exist.
+- Public HTTPS login, authenticated CRM page, 36 compiled assets, Socket.IO
+  polling and WebSocket 101 upgrade passed. Browser login shows an empty lead list.
+- A real queued background task completed; two workers are online and the
+  scheduler/mail are enabled. SMTP SSL465 authentication passed with no test mail.
+- TLS state was copied and compared before starting the new proxy. Current
+  Frappe site/encryption/database configuration is exported outside the app.
+- Old cleanup passed its exact-resource/credential preconditions and removed ten
+  old containers, six volumes, two networks, old images, `/opt/crm` (including old
+  backups/media), obsolete backup units and scoped temporary deployment artifacts.
+- Non-secret deployment receipt: `/opt/frappe-crm/deployment.json`. Source SuiteCRM
+  was not accessed or changed; data migration remains separate work.

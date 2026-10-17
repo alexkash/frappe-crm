@@ -22,6 +22,16 @@ docker compose --env-file /etc/recuite/credentials/frappe.env --profile setup ru
 docker compose --env-file /etc/recuite/credentials/frappe.env up -d backend websocket queue-short queue-long scheduler frontend
 ```
 
+For this one-time clean installation, run `initialize_site.py` inside the backend
+from `/home/frappe/frappe-bench/sites`, using `../env/bin/python`. Pass a JSON
+object with `smtp_password` through stdin from the protected credential store;
+never put the password in command arguments or logs. The script requires paused
+email/scheduler and empty CRM tables. It runs Framework setup with Ukraine,
+Europe/Kyiv and UAH defaults, excluding the CRM task that creates demo records.
+It then validates the retained Cloudflare SMTP account without sending mail.
+The `set-config -p` CLI in this Framework release parses Python literals: use
+`True` and `False`, not lowercase JSON booleans.
+
 The public proxy has its own profile so it cannot take ports 80/443 before
 cutover. Before its first start, transfer the existing Caddy TLS data into
 `recuite_caddy_data`, verify the copy and create `recuite_caddy_config`. Then stop
@@ -35,6 +45,9 @@ Verify public HTTPS, authenticated access, static assets, websocket handshake,
 worker/scheduler health, zero customer records and SMTP authentication. Saving
 an Email Account validates SMTP without sending mail. Keep outgoing mail muted
 until initialization checks pass; then enable the scheduler and outgoing mail.
+Use `bench --site crm.recuite.com set-config -p pause_scheduler False`,
+`bench --site crm.recuite.com set-config -p mute_emails False` and
+`bench --site crm.recuite.com enable-scheduler` for that final step.
 
 Current and previous credentials are retained under `/etc/recuite/credentials`.
 The BottleCRM credentials subdirectory contains six original environment files
@@ -42,6 +55,8 @@ and `runtime-and-database-keys.json`, with a non-secret manifest. It is not a
 database archive. Frappe credentials include its independent database/admin
 passwords and the site encryption key. Do not copy old Django signing keys into
 Frappe. Do not revoke external credentials as part of cleanup.
+Three previous environment configurations were also retained under
+`bottlecrm/previous-config-keys`, including previous integration keys.
 
 After the new site passes, the authorized cleanup removes `/opt/crm`, old app and
 migration containers, PostgreSQL/Redis/snapshot volumes, old networks, old

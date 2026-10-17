@@ -96,8 +96,8 @@ services:
         test ! -e sites/crm.recuite.com/site_config.json
         bench new-site crm.recuite.com --db-type mariadb --db-host db --db-port 3306 --db-root-username root --db-root-password "$$DB_ROOT_PASSWORD" --admin-password "$$ADMIN_PASSWORD" --mariadb-user-host-login-scope='%' --install-app crm --set-default
         bench --site crm.recuite.com set-config host_name https://crm.recuite.com
-        bench --site crm.recuite.com set-config -p mute_emails true
-        bench --site crm.recuite.com set-config -p pause_scheduler true
+        bench --site crm.recuite.com set-config -p mute_emails True
+        bench --site crm.recuite.com set-config -p pause_scheduler True
         chmod 600 sites/crm.recuite.com/site_config.json sites/common_site_config.json
     depends_on:
       configurator:
