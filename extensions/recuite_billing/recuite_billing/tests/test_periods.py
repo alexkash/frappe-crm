@@ -1,10 +1,32 @@
 import unittest
 from datetime import date
 
-from recuite_billing.periods import period_for_index
+from recuite_billing.periods import is_partial_period, period_for_index
 
 
 class TestPeriods(unittest.TestCase):
+	def test_detects_clipped_and_off_schedule_periods_for_explicit_confirmation(self):
+		cases = [
+			("2026-01-01", "2026-12-31", "Yearly", "2026-01-01", "2026-12-31", False),
+			("2026-01-01", "2026-12-15", "Yearly", "2026-01-01", "2026-12-15", True),
+			("2026-01-01", "2026-12-31", "Quarterly", "2026-04-01", "2026-06-30", False),
+			("2026-01-01", "2026-12-31", "Monthly", "2026-01-10", "2026-01-31", True),
+			("2028-01-31", "2028-12-31", "Monthly", "2028-02-29", "2028-03-30", False),
+			("2026-01-01", "2026-12-15", "One-time", "2026-01-01", "2026-12-15", False),
+		]
+		for start, end, cadence, first, last, expected in cases:
+			with self.subTest(first=first, cadence=cadence):
+				self.assertEqual(
+					is_partial_period(
+						date.fromisoformat(start),
+						date.fromisoformat(end),
+						cadence,
+						date.fromisoformat(first),
+						date.fromisoformat(last),
+					),
+					expected,
+				)
+
 	def test_anchors_months_to_contract_start(self):
 		for year, expected in [
 			(2028, [("2028-01-31", "2028-02-28"), ("2028-02-29", "2028-03-30")]),
