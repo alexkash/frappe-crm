@@ -1,0 +1,14 @@
+{
+  admin localhost:2019
+}
+
+crm.recuite.com {
+  encode zstd gzip
+  header {
+    X-Content-Type-Options nosniff
+    Referrer-Policy same-origin
+  }
+  @root path /
+  redir @root /crm 302
+  reverse_proxy frontend:8080
+}

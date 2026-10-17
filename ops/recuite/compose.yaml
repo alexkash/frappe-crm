@@ -1,0 +1,188 @@
+name: frappe
+
+x-frappe: &frappe
+  image: recuite/crm:v1.88.0-20261017
+  pull_policy: never
+  platform: linux/amd64
+  restart: unless-stopped
+  depends_on:
+    configurator:
+      condition: service_completed_successfully
+  volumes:
+    - sites:/home/frappe/frappe-bench/sites
+    - logs:/home/frappe/frappe-bench/logs
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: '3'
+
+services:
+  db:
+    image: mariadb:11.8
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in protected env file}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
+      - --innodb-buffer-pool-size=256M
+    volumes:
+      - database:/var/lib/mysql
+    mem_limit: 768m
+    healthcheck:
+      test: [CMD, healthcheck.sh, --connect, --innodb_initialized]
+      start_period: 20s
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  redis-cache:
+    image: redis:8.6-alpine
+    restart: unless-stopped
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    mem_limit: 192m
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis-queue:
+    image: redis:8.6-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy noeviction
+    volumes:
+      - queue:/data
+    mem_limit: 256m
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  configurator:
+    <<: *frappe
+    restart: 'no'
+    entrypoint: [bash, -ec]
+    command:
+      - |
+        ls -1 apps > sites/apps.txt
+        bench set-config -g db_host db
+        bench set-config -gp db_port 3306
+        bench set-config -g redis_cache redis://redis-cache:6379
+        bench set-config -g redis_queue redis://redis-queue:6379
+        bench set-config -g redis_socketio redis://redis-queue:6379
+        bench set-config -gp socketio_port 9000
+    depends_on:
+      db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+      redis-queue:
+        condition: service_healthy
+
+  create-site:
+    <<: *frappe
+    profiles: [setup]
+    restart: 'no'
+    entrypoint: [bash, -ec]
+    environment:
+      DB_ROOT_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in protected env file}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in protected env file}
+    command:
+      - |
+        test ! -e sites/crm.recuite.com/site_config.json
+        bench new-site crm.recuite.com --db-type mariadb --db-host db --db-port 3306 --db-root-username root --db-root-password "$$DB_ROOT_PASSWORD" --admin-password "$$ADMIN_PASSWORD" --mariadb-user-host-login-scope='%' --install-app crm --set-default
+        bench --site crm.recuite.com set-config host_name https://crm.recuite.com
+        bench --site crm.recuite.com set-config -p mute_emails true
+        bench --site crm.recuite.com set-config -p pause_scheduler true
+        chmod 600 sites/crm.recuite.com/site_config.json sites/common_site_config.json
+    depends_on:
+      configurator:
+        condition: service_completed_successfully
+
+  backend:
+    <<: *frappe
+    environment:
+      GUNICORN_WORKERS: '2'
+      GUNICORN_THREADS: '2'
+      GUNICORN_TIMEOUT: '120'
+    mem_limit: 768m
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import http.client,sys; c=http.client.HTTPConnection('localhost',8000,timeout=8); c.request('GET','/api/method/ping',headers={'Host':'crm.recuite.com'}); sys.exit(c.getresponse().status != 200)"
+      start_period: 30s
+      interval: 10s
+      timeout: 10s
+      retries: 12
+
+  websocket:
+    <<: *frappe
+    command: node /home/frappe/frappe-bench/apps/frappe/socketio.js
+    mem_limit: 192m
+
+  queue-short:
+    <<: *frappe
+    command: bench worker --queue short,default
+    mem_limit: 384m
+
+  queue-long:
+    <<: *frappe
+    command: bench worker --queue long,default,short
+    mem_limit: 384m
+
+  scheduler:
+    <<: *frappe
+    command: bench schedule
+    mem_limit: 192m
+
+  frontend:
+    <<: *frappe
+    command: nginx-entrypoint.sh
+    environment:
+      BACKEND: backend:8000
+      SOCKETIO: websocket:9000
+      NGINX_LISTEN_PORT: '8080'
+      FRAPPE_SITE_NAME_HEADER: crm.recuite.com
+      UPSTREAM_REAL_IP_HEADER: X-Forwarded-For
+      UPSTREAM_REAL_IP_ADDRESS: 172.16.0.0/12
+      PROXY_READ_TIMEOUT: '120'
+    mem_limit: 128m
+    depends_on:
+      backend:
+        condition: service_healthy
+      websocket:
+        condition: service_started
+
+  proxy:
+    image: caddy:2
+    restart: unless-stopped
+    profiles: [public]
+    ports:
+      - 80:80
+      - 443:443
+      - 443:443/udp
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      frontend:
+        condition: service_started
+
+volumes:
+  database:
+  sites:
+  logs:
+  queue:
+  caddy-data:
+    external: true
+    name: recuite_caddy_data
+  caddy-config:
+    external: true
+    name: recuite_caddy_config
