@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import frappe
 from frappe.tests.utils import FrappeTestCase
 
@@ -5,6 +7,17 @@ from recuite_billing import install
 
 
 class TestInstall(FrappeTestCase):
+	def test_rejects_another_apps_file_override_before_changing_schema(self):
+		original = frappe.get_hooks
+
+		def hooks(name=None, *args, **kwargs):
+			if name == "override_doctype_class":
+				return {"File": ["other_app.CustomFile"]}
+			return original(name, *args, **kwargs)
+
+		with patch("frappe.get_hooks", side_effect=hooks), self.assertRaises(frappe.ValidationError):
+			install.after_migrate()
+
 	def test_custom_fields_are_idempotent_and_catalog_data_survives(self):
 		product = frappe.get_doc(
 			{

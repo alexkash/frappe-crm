@@ -7,6 +7,11 @@ def after_install():
 
 
 def after_migrate():
+	overrides = frappe.get_hooks("override_doctype_class").get("File", [])
+	if any(path != "recuite_billing.overrides.file.BillingFile" for path in overrides):
+		frappe.throw(
+			"Інший застосунок перевизначає File: узгодьте обробку захищених вкладень перед встановленням billing"
+		)
 	for name in ("UA Billing User", "UA Billing Manager", "UA Billing Reader"):
 		if not frappe.db.exists("Role", name):
 			frappe.get_doc({"doctype": "Role", "role_name": name, "desk_access": 1}).insert(
