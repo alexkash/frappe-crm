@@ -1,7 +1,10 @@
+from contextvars import ContextVar
+
 import frappe
 from frappe.model.db_query import DatabaseQuery
 
 PROTECTED_DOCTYPES = {"UA Contract", "UA Invoice", "UA Act", "UA Print Asset"}
+_checking_saved_scope = ContextVar("ua_billing_saved_scope", default=False)
 
 
 def can_read(doctype, name, user=None):
@@ -17,6 +20,20 @@ def has_document_permission(doc, ptype=None, user=None):
 	user = user or frappe.session.user
 	if user == "Administrator" or "System Manager" in frappe.get_roles(user):
 		return None
+	if (
+		ptype in {"write", "delete", "submit", "cancel", "amend", "share"}
+		and doc.name
+		and not doc.is_new()
+		and not _checking_saved_scope.get()
+	):
+		if frappe.db.exists(doc.doctype, doc.name):
+			saved = frappe.get_doc(doc.doctype, doc.name)
+			token = _checking_saved_scope.set(True)
+			try:
+				if not frappe.has_permission(doc.doctype, ptype, doc=saved, user=user):
+					return False
+			finally:
+				_checking_saved_scope.reset(token)
 	if ptype == "create" and not doc.get("issuer"):
 		return None
 	if not can_read("UA Issuer", doc.get("issuer"), user):

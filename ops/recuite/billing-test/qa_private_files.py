@@ -71,6 +71,10 @@ try:
 	frappe.db.commit()
 	assert request(resource)[0] == 403
 	assert request(private)[0] == 403
+	forged = json.loads(document.as_json())
+	forged["issuer"], forged["bank_account"] = second.name, second.bank_accounts[0].name
+	assert request("/api/method/frappe.client.save", method="POST", data={"doc": forged})[0] == 403
+	assert frappe.db.get_value("UA Contract", document.name, "issuer") == first.name
 	listing = "/api/resource/File?filters=" + quote(json.dumps({"name": attachment.name}))
 	status, body = request(listing)
 	assert status == 200 and json.loads(body)["data"] == []

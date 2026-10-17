@@ -5,6 +5,17 @@ from recuite_billing.tests.helpers import as_user, contract, issuer, user
 
 
 class TestBillingPermissions(FrappeTestCase):
+	def test_cannot_take_over_an_existing_contract_by_spoofing_its_issuer(self):
+		first, second = issuer(), issuer()
+		doc = contract(owner=first)
+		account = user("UA Billing Manager", second.name)
+		payload = doc.as_dict()
+		payload["issuer"] = second.name
+		payload["bank_account"] = second.bank_accounts[0].name
+		with as_user(account), self.assertRaises(frappe.PermissionError):
+			frappe.get_doc(payload).save()
+		self.assertEqual(frappe.db.get_value("UA Contract", doc.name, "issuer"), first.name)
+
 	def test_billing_role_does_not_expose_companies_without_crm_access(self):
 		doc = contract()
 		account = user("UA Billing Reader", doc.issuer)
