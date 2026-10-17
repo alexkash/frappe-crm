@@ -43,6 +43,15 @@ jobs:
           "${compose[@]}" run --rm -T --entrypoint bench backend --site test_site migrate
           "${compose[@]}" run --rm -T --entrypoint bench backend --site test_site migrate
           "${compose[@]}" run --rm -T --entrypoint /home/frappe/frappe-bench/env/bin/python backend /opt/billing-test/run_tests.py
+      - name: Real HTTP and synthetic acceptance
+        run: |
+          set -euo pipefail
+          compose=(docker compose --env-file "$RUNNER_TEMP/billing-test.env" -f ops/recuite/billing-test/compose.yaml)
+          "${compose[@]}" up -d backend
+          "${compose[@]}" exec -T backend /home/frappe/frappe-bench/env/bin/python /opt/billing-test/qa_acceptance.py
+          "${compose[@]}" exec -T backend /home/frappe/frappe-bench/env/bin/python /opt/billing-test/qa_http_billing.py
+          "${compose[@]}" exec -T backend /home/frappe/frappe-bench/env/bin/python /opt/billing-test/qa_private_files.py
+          "${compose[@]}" run --rm -T --entrypoint /home/frappe/frappe-bench/env/bin/python bootstrap /opt/billing-test/qa_restore.py
       - name: Stop this runner's test project
         if: always()
         run: docker compose --env-file "$RUNNER_TEMP/billing-test.env" -f ops/recuite/billing-test/compose.yaml down

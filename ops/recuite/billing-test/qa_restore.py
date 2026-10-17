@@ -29,7 +29,10 @@ frappe.destroy()
 def bench(*args):
 	result = subprocess.run(["bench", *args], text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 	if result.returncode:
-		print("Test restore operation failed; inspect the private container log")
+		message = result.stdout
+		for key in ("BILLING_TEST_DB_PASSWORD", "BILLING_TEST_ADMIN_PASSWORD"):
+			message = message.replace(os.environ[key], "[redacted]")
+		print(message[-4000:])
 		raise SystemExit(1)
 
 

@@ -7,7 +7,8 @@ from io import BytesIO
 from pathlib import Path
 
 import frappe
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
+from pypdf import PdfReader
 
 os.chdir("/home/frappe/frappe-bench/sites")
 frappe.init(site="test_site")
@@ -49,10 +50,13 @@ try:
 	for kind in ("Logo", "Signature", "Stamp"):
 		image = Image.new("RGBA", (500, 500) if kind == "Stamp" else (700, 180), (255, 255, 255, 0))
 		draw = ImageDraw.Draw(image)
+		font = ImageFont.truetype(
+			"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 70 if kind == "Logo" else 40
+		)
 		if kind == "Stamp":
 			draw.ellipse((15, 15, 485, 485), outline="#244a9b", width=12)
 			draw.ellipse((55, 55, 445, 445), outline="#244a9b", width=4)
-			draw.text((185, 238), "TEST ONLY", fill="#244a9b", stroke_width=2)
+			draw.text((135, 225), "TEST ONLY", fill="#244a9b", font=font)
 		elif kind == "Signature":
 			draw.line(
 				[
@@ -72,7 +76,7 @@ try:
 			)
 		else:
 			draw.rounded_rectangle((0, 0, 690, 170), radius=25, fill="#163b56")
-			draw.text((300, 80), "TEST", fill="white", stroke_width=2)
+			draw.text((245, 45), "TEST", fill="white", font=font)
 		buffer = BytesIO()
 		image.save(buffer, format="PNG")
 		card = asset(owner, kind)
@@ -131,6 +135,12 @@ try:
 			"UA Invoice", create_invoice(agreement.name, "2026-01-01", "2026-12-31")["name"]
 		).submit()
 		export(bill, label)
+		if vat:
+			text = "\n".join(
+				page.extract_text()
+				for page in PdfReader(BytesIO(get_document_pdf(bill.doctype, bill.name).get_content())).pages
+			)
+			assert "ІПН платника ПДВ: 000000000000" in text
 	long_source = contract()
 	row = {
 		key: long_source.items[0].get(key)

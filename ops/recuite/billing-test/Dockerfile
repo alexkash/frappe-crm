@@ -1,5 +1,9 @@
 FROM --platform=linux/amd64 ghcr.io/frappe/crm:v1.88.0@sha256:5fad619652bf5f3c0313784b37b11958b8ae0341cd64c298cec14b8e0d581c63
 
+# Realtime authenticates through Origin; use the private frontend alias, not host localhost.
+USER root
+RUN sed -i 's|proxy_set_header Origin .*;|proxy_set_header Origin http://billing-test.localhost:18082;|' /templates/nginx/frappe.conf.template \
+    && sed -i '/location \/socket.io/,/^[[:space:]]*}/s|proxy_set_header Host .*;|proxy_set_header Host billing-test.localhost:18082;|' /templates/nginx/frappe.conf.template
 USER frappe
 WORKDIR /home/frappe/frappe-bench
 ENV NODE_OPTIONS=--max-old-space-size=2048
