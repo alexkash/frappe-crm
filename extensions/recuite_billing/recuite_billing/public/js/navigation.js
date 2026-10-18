@@ -8,6 +8,24 @@ $(document).on("app_ready", () => {
   link.title = "Повернутися до документів CRM";
   link.setAttribute("aria-label", link.title);
   link.className = "btn btn-default btn-sm mr-3 flex-shrink-0";
-  // A normal link preserves Frappe's native warning about unsaved changes.
+  link.addEventListener("click", (event) => {
+    const frm = window.cur_frm;
+    if (
+      event.button !== 0 ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.altKey ||
+      frappe.get_route()[0] !== "Form" ||
+      !frm?.is_dirty()
+    )
+      return;
+    event.preventDefault();
+    frappe.confirm("Є незбережені зміни. Повернутися до CRM без збереження?", () => {
+      // Discarding was confirmed above; avoid a second browser warning.
+      window.removeEventListener("beforeunload", frm.beforeUnloadListener, { capture: true });
+      window.location.assign(link.href);
+    });
+  });
   home.after(link);
 });
