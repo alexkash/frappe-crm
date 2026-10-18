@@ -53,6 +53,19 @@ class TestActs(FrappeTestCase):
 			self.assertEqual(sum(act.grand_total for act in acts), 3000)
 			self.assertEqual(invoice.grand_total, 3000)
 
+	def test_final_suggested_act_consumes_fractional_quantity_remainder(self):
+		from recuite_billing.api import get_act_items
+
+		invoice = self.invoice(contract(qty=1, cadence="Quarterly"), "2026-01-01", "2026-03-31")
+		quantities = []
+		for month in (1, 2, 3):
+			qty = get_act_items(invoice.name)[0]["qty"]
+			quantities.append(Decimal(qty))
+			self.draft(invoice, month, qty=qty).submit()
+		self.assertEqual(quantities, [Decimal("0.333333"), Decimal("0.333333"), Decimal("0.333334")])
+		self.assertEqual(sum(quantities), Decimal(1))
+		self.assertEqual(get_act_items(invoice.name), [])
+
 	def test_rejects_draft_invoice_foreign_rows_and_dates(self):
 		from recuite_billing.api import create_invoice
 

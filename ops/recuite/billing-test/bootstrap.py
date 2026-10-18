@@ -117,9 +117,9 @@ if __name__ == "__main__":
 		for key in ("BILLING_TEST_DB_PASSWORD", "BILLING_TEST_ADMIN_PASSWORD"):
 			if os.environ.get(key):
 				details = details.replace(os.environ[key], "[redacted]")
-		log = Path("/tmp/billing-bootstrap.log")
+		log = Path("/home/frappe/frappe-bench/logs/billing-bootstrap.log")
 		log.write_text(details)
 		log.chmod(0o600)
-		print("Bootstrap failed; inspect /tmp/billing-bootstrap.log in this test container")
+		print("Bootstrap failed; inspect billing-bootstrap.log in the retained test logs volume")
 		raise SystemExit(1)
 	print(json.dumps({"site": SITE, "created": True, "emails_muted": True}))

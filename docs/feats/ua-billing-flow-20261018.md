@@ -1,8 +1,12 @@
 # Company document continuation — 2026-10-18
 
-Status: implementation and bounded private QA complete. VPS window released.
-Keep this branch local; no deployment, historical invoice archive or migration
-import is part of this change.
+Status: PR #1 is preparing the production billing release. The local-only
+restriction below records the earlier QA handoff and is superseded by the user
+authorization to merge and deploy. Follow `ua-billing-rollout-20261018.md`; the PR
+records the final source, image and deployment receipt. Historical invoice
+archive and migration imports remain with the migration coordinator.
+
+The following verification and window-release observations are historical.
 
 ## Scope and integration
 
@@ -40,11 +44,11 @@ No schema migration or dependency change is required by this continuation patch.
   issuance/PDF → act draft → company Documents. Cold return preserved the selected
   document kind. Browser loaded final entry `index-B_-uSEvV.js`.
 - Private final probe: one QA invoice, one QA act, invoice PDF bytes match stored
-  SHA; Email Queue0 and Communication0; mail muted and scheduler paused.
+  SHA; Email Queue 0 and Communication 0; mail muted and scheduler paused.
 - Console: expected Socket.IO errors because the private stack has no realtime
   service, plus unrelated Chrome-extension errors. No document-flow error observed.
 
-Known minor: the explicit company return link opens page1 of the current document
+Known minor: the explicit company return link opens page 1 of the current document
 kind. Browser Back retains the originating query/pagination. Live realtime updates
 and production delivery/deployment were not tested here.
 
@@ -56,7 +60,7 @@ Evidence/config/logs/retained synthetic volumes:
 `/opt/frappe-crm/billing-flow/20261018/` on VPS `crm`.
 
 All five private services (job, web, DB and both Redis services) are stopped.
-Fresh release observation: MemAvailable2155MiB, above the 2048MiB start guard.
+Fresh release observation: MemAvailable 2155 MiB, above the 2048MiB start guard.
 The local SSH tunnel and agent-created QA tab are closed. No further VPS jobs
 will be started by this billing-flow task. No production services/config/data or
 other sessions' test projects were stopped or changed.
@@ -84,9 +88,9 @@ of treating that response as proof of full coverage. Existing server overlap,
 quantity and issuance checks are unchanged.
 
 Three new regression cases were observed RED then GREEN: manual invoice and act
-creation for January16–31 with an empty suggestion, and denial when no invoice
+creation for January 16–31 with an empty suggestion, and denial when no invoice
 quantity remains. They check the explicit creation payload and destination too.
-Final local frontend311/311; scoped ESLint, JS syntax and whitespace checks pass.
+Final local frontend 311/311; scoped ESLint, JS syntax and whitespace checks pass.
 No VPS services, production data or migration/archive files were touched for this
 follow-up. Combine this follow-up commit with the coordinator's imported flow
 commit before final acceptance; no separate flow image has been built here.

@@ -166,12 +166,16 @@ def get_act_items(invoice: str) -> list:
 	if source.docstatus != 1:
 		frappe.throw(_("Спочатку випустіть рахунок"))
 	acts = frappe.db.get_values(
-		"UA Act", {"invoice": invoice, "docstatus": 1}, "name", pluck=True, for_update=True
+		"UA Act",
+		{"invoice": invoice, "docstatus": 1},
+		["name", "period_from", "period_to"],
+		as_dict=True,
+		for_update=True,
 	)
 	used = (
 		frappe.db.get_values(
 			"UA Billing Item",
-			{"parenttype": "UA Act", "parent": ["in", acts]},
+			{"parenttype": "UA Act", "parent": ["in", [act.name for act in acts]]},
 			["invoice_item", "qty"],
 			as_dict=True,
 			for_update=True,
@@ -180,25 +184,33 @@ def get_act_items(invoice: str) -> list:
 		else []
 	)
 	try:
-		count = len(
-			periods_in_range(
-				_service_anchor(source),
-				getdate(source.period_from),
-				getdate(source.period_to),
-				source.act_cadence,
-			)
+		schedule = periods_in_range(
+			_service_anchor(source),
+			getdate(source.period_from),
+			getdate(source.period_to),
+			source.act_cadence,
 		)
 	except ValueError as exc:
 		frappe.throw(str(exc))
+	open_periods = sum(
+		not any(getdate(act.period_from) <= last and getdate(act.period_to) >= first for act in acts)
+		for first, last in schedule
+	)
 	result = []
 	for row in source.items:
 		remaining = Decimal(str(row.qty)) - sum(
 			(Decimal(str(item.qty)) for item in used if item.invoice_item == row.name), Decimal(0)
 		)
 		if remaining > 0:
-			qty = min(
-				remaining,
-				(Decimal(str(row.qty)) / max(1, count)).quantize(Decimal("0.000001"), rounding=ROUND_DOWN),
+			qty = (
+				remaining
+				if open_periods <= 1
+				else min(
+					remaining,
+					(Decimal(str(row.qty)) / max(1, len(schedule))).quantize(
+						Decimal("0.000001"), rounding=ROUND_DOWN
+					),
+				)
 			)
 			result.append(
 				{

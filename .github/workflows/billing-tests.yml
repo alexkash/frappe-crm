@@ -11,12 +11,17 @@ on:
       - ops/recuite/Dockerfile
       - .github/workflows/billing-tests.yml
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Create isolated synthetic credentials
         run: |
           python3 - <<'PY'
