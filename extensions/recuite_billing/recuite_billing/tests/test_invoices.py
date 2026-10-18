@@ -8,6 +8,15 @@ from recuite_billing.tests.helpers import contract, issuer, organization, parall
 
 
 class TestInvoices(FrappeTestCase):
+	def test_missing_act_cadence_cannot_issue_an_invoice(self):
+		doc = frappe.get_doc("UA Invoice", self.create(contract())["name"])
+		doc.act_cadence = ""
+		doc.save()
+		with self.assertRaisesRegex(frappe.ValidationError, "періодичність актів"):
+			doc.submit()
+		self.assertEqual(frappe.db.get_value("UA Invoice", doc.name, "docstatus"), 0)
+		self.assertFalse(frappe.db.get_value("UA Invoice", doc.name, "print_number"))
+
 	def setUp(self):
 		from recuite_billing.tests.helpers import pdf_bytes
 

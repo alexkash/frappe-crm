@@ -109,3 +109,9 @@ commit, native-guest delegation and v15 File-subclass exceptions use specific
 Semgrep rule IDs with explanations. No scan paths/rules were disabled.
 Local frontend319/319, scoped lints/format/syntax and the complete addon/QA Frappe
 Semgrep ruleset pass. Updated GitHub/runtime acceptance and rollout are pending.
+
+The second Codex review found an optional empty act cadence could survive invoice
+issuance and block future acts. Issuance now rejects unsupported/empty cadences
+while incomplete drafts remain editable; DocType JSON is unchanged. The new real
+Frappe regression was observed FAIL without the guard and PASS with the exact
+updated validator, including draft status and no allocated invoice number.

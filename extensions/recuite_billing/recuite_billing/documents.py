@@ -7,7 +7,7 @@ from frappe.utils import get_datetime, getdate, strip_html, today
 
 from recuite_billing.calculations import allocate_act_items, calculate_items
 from recuite_billing.parties import make_party_snapshot
-from recuite_billing.periods import is_partial_period
+from recuite_billing.periods import MONTHS, is_partial_period
 from recuite_billing.permissions import assert_owned_rows
 
 ITEM_FIELDS = (
@@ -205,6 +205,8 @@ def validate_invoice(doc, *, issue=False):
 		doc.requires_partial_confirmation = 0
 	if issue and doc.requires_partial_confirmation and not doc.partial_period_confirmed:
 		frappe.throw(_("Підтвердьте кількість і ціну за неповний період"))
+	if issue and doc.act_cadence not in (*MONTHS, "One-time"):
+		frappe.throw(_("Оберіть періодичність актів перед випуском рахунку"))
 	if doc.deal:
 		deal = record("CRM Deal", doc.deal)
 		if deal.organization != doc.organization:
