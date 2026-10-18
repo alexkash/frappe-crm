@@ -1,50 +1,69 @@
 {% include "_styles.html" %}
 <div class="document act-document">
   {% if doc.docstatus == 0 %}<div class="draft">ЧЕРНЕТКА</div>{% endif %}
-  {% if images.get('logo') %}<img class="logo" alt="Логотип" src="{{ images.logo | e }}">{% endif %}
-  <table class="two-columns approval">
-    <tr>
-      <td>ЗАТВЕРДЖУЮ<br><br>{{ party.issuer.legal_name | e }}<br><span class="signature-line">{% if images.get('signature') %}<img class="signature-image" alt="Зображення підпису виконавця" src="{{ images.signature | e }}">{% endif %}</span><br>{{ party.issuer.signatory | e }}<br>{{ party.issuer.signatory_position | e }}</td>
-      <td>ЗАТВЕРДЖУЮ<br><br>{{ party.customer.legal_name | e }}<br><span class="signature-line"></span><br>{{ party.customer.signatory | e }}<br>{{ party.customer.signatory_position | e }}</td>
-    </tr>
-  </table>
-  <h1>АКТ № {{ (doc.print_number or 'Чернетка') | e }} здачі-прийняття робіт (надання послуг)</h1>
-  <p>Ми, представники Замовника {{ party.customer.legal_name | e }}, {{ party.customer.signatory | e }}, з одного боку, та Виконавець {{ party.issuer.legal_name | e }}, {{ party.issuer.signatory | e }}, з іншого боку, склали цей акт про те, що Виконавцем були проведені такі роботи{% if party.get('contract') %} згідно договору № {{ party.contract.number | e }} від {{ date_uk(party.contract.date) }}{% endif %}, рахунок № {{ party.invoice.number | e }} від {{ date_uk(party.invoice.date) }}.</p>
-  <p>Період надання послуг: {{ date_uk(doc.period_from) }} — {{ date_uk(doc.period_to) }}.</p>
-  <table class="act-services">
-    {% for row in items %}
-    <tr><td class="details">{{ row.product_name | e }}{% if row.description and row.description != row.product_name %}<br>{{ row.description | e }}{% endif %}{% set note = rounding_note(row) %}{% if note %}<br><span class="muted">{{ note | e }}</span>{% endif %}</td><td class="number">{{ money_uk(row.net_amount) }} грн.<br><span class="muted">сума без ПДВ</span></td></tr>
-    {% endfor %}
+  <table class="masthead"><tr>
+    <td>{% if images.get('logo') %}<img class="logo" alt="Логотип" src="{{ images.logo | e }}">{% else %}<div class="brand-name">{{ party.issuer.legal_name | e }}</div>{% endif %}</td>
+    <td class="category">Акт / UAH</td>
+  </tr></table>
+  <h1>АКТ № {{ (doc.print_number or 'Чернетка') | e }}</h1>
+  <p class="act-title">здачі-прийняття робіт (надання послуг)</p>
+  <table class="meta"><tr>
+    <td><span class="meta-label">Дата складання</span><span class="meta-value">{{ date_uk(doc.posting_date) }}</span></td>
+    <td><span class="meta-label">Місце складання</span><span class="meta-value">{{ (doc.place_of_issue or '') | e }}</span></td>
+  </tr></table>
+  <p class="act-intro">Ми, представники Замовника {{ party.customer.legal_name | e }}, {{ party.customer.signatory | e }}, з одного боку, та Виконавець {{ party.issuer.legal_name | e }}, {{ party.issuer.signatory | e }}, з іншого боку, склали цей акт про те, що Виконавцем були проведені такі роботи{% if party.get('contract') %} згідно договору № <span class="reference">{{ party.contract.number | e }}</span> від {{ date_uk(party.contract.date) }}{% endif %}, рахунок № <span class="reference">{{ party.invoice.number | e }}</span> від {{ date_uk(party.invoice.date) }}.</p>
+  <p class="muted">Період надання послуг: {{ date_uk(doc.period_from) }} - {{ date_uk(doc.period_to) }}.</p>
+  <table class="items">
+    <colgroup><col style="width:4%"><col style="width:57%"><col style="width:18%"><col style="width:21%"></colgroup>
+    <thead><tr><th class="row-index">№</th><th>Роботи / послуги</th><th class="number">Кількість / од.</th><th class="number">Сума без ПДВ, грн</th></tr></thead>
+    <tbody>{% for row in items %}<tr>
+      <td class="row-index">{{ loop.index }}</td>
+      <td><div class="item-name">{{ row.product_name | e }}</div>{% if row.description and row.description != row.product_name %}<div class="item-description">{{ row.description | e }}</div>{% endif %}{% set note = rounding_note(row) %}{% if note %}<div class="item-description">{{ note | e }}</div>{% endif %}</td>
+      <td class="number">{{ quantity_uk(row.qty) }}<br><span class="muted">{{ row.uom | e }}</span></td>
+      <td class="number line-amount">{{ money_uk(row.net_amount) }}</td>
+    </tr>{% endfor %}</tbody>
   </table>
   <div class="final-block">
-    <p>Загальна вартість робіт (послуг) без ПДВ: <strong>{{ money_uk(doc.net_total) }} грн.</strong></p>
-    {% if tax_label != 'Без ПДВ' %}<p>{{ tax_label | e }}: {{ money_uk(doc.vat_total) }} грн.</p>{% endif %}
-    <p>Всього: <strong>{{ money_uk(doc.grand_total) }} грн.</strong> ({{ amount_in_words_uk(doc.grand_total) | e }}).</p>
-    {% if tax_label == 'Без ПДВ' %}<p>Без ПДВ.</p>{% endif %}
-    <p>Сторони претензій одна до одної не мають.</p>
-    <p style="margin-top:6mm">Місце складання: {{ (doc.place_of_issue or '') | e }}</p>
-    <table class="two-columns act-footer">
-      <tr>
-        <td>
-          <strong>Від Виконавця:</strong><br>{{ date_uk(doc.posting_date) }}<br>{{ party.issuer.legal_name | e }}<br>
-          <div class="details">Юридична адреса: {{ party.issuer.legal_address | e }}</div>
-          {{ 'РНОКПП' if party.issuer.issuer_type == 'ФОП' else 'ЄДРПОУ' }}: {{ party.issuer.registration_code | e }}<br>
-          {% if party.issuer.vat_registered %}ІПН платника ПДВ: {{ party.issuer.vat_number | e }}<br>{% endif %}
-          {% if party.bank.iban %}П/р № {{ party.bank.iban | e }}<br>в {{ party.bank.bank_name | e }}{% if party.bank.bank_mfo %}, МФО {{ party.bank.bank_mfo | e }}{% endif %}<br>{% endif %}
-          {% if party.issuer.phone %}Телефон: {{ party.issuer.phone | e }}<br>{% endif %}
-          {% if party.issuer.income_tax_note %}{{ party.issuer.income_tax_note | e }}{% endif %}
-          {% if images.get('stamp') %}<br><img class="stamp-image" style="margin:3mm 0 0" alt="Зображення печатки виконавця" src="{{ images.stamp | e }}">{% endif %}
-        </td>
-        <td>
-          <strong>Від Замовника:</strong><br>{{ date_uk(doc.posting_date) }}<br>{{ party.customer.legal_name | e }}<br>
-          <div class="details">Юридична адреса: {{ party.customer.legal_address | e }}</div>
-          ЄДРПОУ / РНОКПП: {{ party.customer.registration_code | e }}<br>
-          {% if party.customer.vat_registered %}ІПН платника ПДВ: {{ party.customer.vat_number | e }}<br>{% endif %}
-          {% if party.customer.iban %}П/р № {{ party.customer.iban | e }}<br>в {{ party.customer.bank_name | e }}{% if party.customer.bank_mfo %}, МФО {{ party.customer.bank_mfo | e }}{% endif %}<br>{% endif %}
-          {% if party.customer.phone %}Телефон: {{ party.customer.phone | e }}<br>{% endif %}
-          {% if party.customer.income_tax_note %}{{ party.customer.income_tax_note | e }}{% endif %}
-        </td>
-      </tr>
-    </table>
+    <table class="settlement"><tr>
+      <td class="words-cell"><div class="words"><span class="meta-label">Всього на суму:</span><strong>{{ amount_in_words_uk(doc.grand_total) | e }}</strong><span class="muted">{{ tax_label | e }}</span></div></td>
+      <td class="totals-cell"><table class="totals">
+        <tr><td class="label">Всього без ПДВ</td><td class="value">{{ money_uk(doc.net_total) }}</td></tr>
+        {% if tax_label != 'Без ПДВ' %}<tr><td class="label">{{ tax_label | e }}</td><td class="value">{{ money_uk(doc.vat_total) }}</td></tr>{% endif %}
+        <tr class="grand"><td class="label">Всього</td><td class="value">{{ money_uk(doc.grand_total) }} <span class="currency">грн</span></td></tr>
+      </table></td>
+    </tr></table>
+    <p class="acceptance-note">Сторони претензій одна до одної не мають.</p>
+    <table class="act-footer"><tr>
+      <td>
+        <div class="role">Від Виконавця:</div>
+        <div class="party-name">{{ party.issuer.legal_name | e }}</div>
+        <div class="requisite-line details">Юридична адреса: {{ party.issuer.legal_address | e }}</div>
+        <div class="requisite-line">{{ 'РНОКПП' if party.issuer.issuer_type == 'ФОП' else 'ЄДРПОУ' }}: {{ party.issuer.registration_code | e }}</div>
+        {% if party.issuer.vat_registered %}<div class="requisite-line">ІПН платника ПДВ: {{ party.issuer.vat_number | e }}</div>{% endif %}
+        {% if party.bank.iban %}<div class="requisite-line">П/р № {{ party.bank.iban | e }}<br>{{ party.bank.bank_name | e }}{% if party.bank.bank_mfo %}, МФО {{ party.bank.bank_mfo | e }}{% endif %}</div>{% endif %}
+        {% if party.issuer.phone %}<div class="requisite-line">Телефон: {{ party.issuer.phone | e }}</div>{% endif %}
+        {% if party.issuer.income_tax_note %}<div class="requisite-line muted">{{ party.issuer.income_tax_note | e }}</div>{% endif %}
+      </td>
+      <td>
+        <div class="role">Від Замовника:</div>
+        <div class="party-name">{{ party.customer.legal_name | e }}</div>
+        <div class="requisite-line details">Юридична адреса: {{ party.customer.legal_address | e }}</div>
+        <div class="requisite-line">ЄДРПОУ / РНОКПП: {{ party.customer.registration_code | e }}</div>
+        {% if party.customer.vat_registered %}<div class="requisite-line">ІПН платника ПДВ: {{ party.customer.vat_number | e }}</div>{% endif %}
+        {% if party.customer.iban %}<div class="requisite-line">П/р № {{ party.customer.iban | e }}<br>{{ party.customer.bank_name | e }}{% if party.customer.bank_mfo %}, МФО {{ party.customer.bank_mfo | e }}{% endif %}</div>{% endif %}
+        {% if party.customer.phone %}<div class="requisite-line">Телефон: {{ party.customer.phone | e }}</div>{% endif %}
+        {% if party.customer.income_tax_note %}<div class="requisite-line muted">{{ party.customer.income_tax_note | e }}</div>{% endif %}
+      </td>
+    </tr><tr class="signature-row"><td>
+        <div class="approval">ЗАТВЕРДЖУЮ</div>
+        <table class="endorsement"><tr><td><div class="signature-line">{% if images.get('signature') %}<img class="signature-image" alt="Зображення підпису виконавця" src="{{ images.signature | e }}">{% endif %}</div></td><td class="seal">{% if images.get('stamp') %}<img class="stamp-image" alt="Зображення печатки виконавця" src="{{ images.stamp | e }}">{% endif %}</td></tr></table>
+        <div class="signatory-name">{{ party.issuer.signatory | e }}</div>
+        <div class="muted">{{ party.issuer.signatory_position | e }}</div>
+      </td><td>
+        <div class="approval">ЗАТВЕРДЖУЮ</div>
+        <table class="endorsement"><tr><td><div class="signature-line"></div></td><td class="seal"></td></tr></table>
+        <div class="signatory-name">{{ party.customer.signatory | e }}</div>
+        <div class="muted">{{ party.customer.signatory_position | e }}</div>
+      </td></tr></table>
   </div>
 </div>

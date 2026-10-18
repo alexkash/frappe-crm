@@ -1,52 +1,68 @@
 {% include "_styles.html" %}
 <div class="document">
   {% if doc.docstatus == 0 %}<div class="draft">ЧЕРНЕТКА</div>{% endif %}
-  {% if images.get('logo') %}<img class="logo" alt="Логотип" src="{{ images.logo | e }}">{% endif %}
-  <table class="requisites">
-    <tr>
-      <td class="label">Постачальник</td>
-      <td>
-        <strong>{{ party.issuer.legal_name | e }}</strong><br>
-        {{ 'РНОКПП' if party.issuer.issuer_type == 'ФОП' else 'ЄДРПОУ' }} {{ party.issuer.registration_code | e }}{% if party.issuer.phone %}, тел. {{ party.issuer.phone | e }}{% endif %}<br>
-        {% if party.issuer.vat_registered %}ІПН платника ПДВ: {{ party.issuer.vat_number | e }}<br>{% endif %}
-        {% if party.bank.iban %}Р/р {{ party.bank.iban | e }} в {{ party.bank.bank_name | e }}{% if party.bank.bank_mfo %}, МФО {{ party.bank.bank_mfo | e }}{% endif %}<br>{% endif %}
-        {% if party.issuer.income_tax_note %}{{ party.issuer.income_tax_note | e }}<br>{% endif %}
-        <span class="details">Адреса: {{ party.issuer.legal_address | e }}</span>
-      </td>
-    </tr>
-    <tr><td class="label">Одержувач</td><td>{{ party.customer.legal_name | e }}</td></tr>
-    <tr><td class="label">Платник</td><td>{{ 'той самий' if party.payer_is_customer else party.payer.legal_name | e }}</td></tr>
-    <tr><td class="label">Замовлення</td><td>{{ (doc.order_reference or 'Без замовлення') | e }}</td></tr>
-  </table>
-  <h1>Рахунок-фактура № {{ (doc.print_number or 'Чернетка') | e }} від {{ date_uk(doc.posting_date) }}</h1>
-  <p class="muted">Період: {{ date_uk(doc.period_from) }} — {{ date_uk(doc.period_to) }}{% if party.get('contract') %} · Договір № {{ party.contract.number | e }}{% endif %}</p>
+  <table class="masthead"><tr>
+    <td>{% if images.get('logo') %}<img class="logo" alt="Логотип" src="{{ images.logo | e }}">{% else %}<div class="brand-name">{{ party.issuer.legal_name | e }}</div>{% endif %}</td>
+    <td class="category">Рахунок / UAH</td>
+  </tr></table>
+  <h1>Рахунок-фактура</h1>
+  <p class="document-subtitle">№ <strong>{{ (doc.print_number or 'Чернетка') | e }}</strong> <span class="muted">від {{ date_uk(doc.posting_date) }}</span></p>
+  <table class="meta"><tr>
+    <td><span class="meta-label">Період надання послуг</span><span class="meta-value">{{ date_uk(doc.period_from) }} - {{ date_uk(doc.period_to) }}</span></td>
+    <td><span class="meta-label">Підстава</span><span class="meta-value">{% if party.get('contract') %}Договір № <span class="reference">{{ party.contract.number | e }}</span> від {{ date_uk(party.contract.date) }}{% else %}Не зазначено{% endif %}</span></td>
+  </tr></table>
+  <table class="parties"><tr>
+    <td>
+      <div class="role">Постачальник</div>
+      <div class="party-name">{{ party.issuer.legal_name | e }}</div>
+      <div class="requisite-line">{{ 'РНОКПП' if party.issuer.issuer_type == 'ФОП' else 'ЄДРПОУ' }}: {{ party.issuer.registration_code | e }}</div>
+      <div class="requisite-line details">Адреса: {{ party.issuer.legal_address | e }}</div>
+      {% if party.issuer.phone %}<div class="requisite-line">Телефон: {{ party.issuer.phone | e }}</div>{% endif %}
+      {% if party.issuer.vat_registered %}<div class="requisite-line">ІПН платника ПДВ: {{ party.issuer.vat_number | e }}</div>{% endif %}
+      {% if party.issuer.income_tax_note %}<div class="requisite-line muted">{{ party.issuer.income_tax_note | e }}</div>{% endif %}
+    </td>
+    <td>
+      <div class="role">Одержувач</div>
+      <div class="party-name">{{ party.customer.legal_name | e }}</div>
+      <div class="requisite-line">ЄДРПОУ / РНОКПП: {{ party.customer.registration_code | e }}</div>
+      <div class="requisite-line details">Адреса: {{ party.customer.legal_address | e }}</div>
+      {% if party.customer.phone %}<div class="requisite-line">Телефон: {{ party.customer.phone | e }}</div>{% endif %}
+      {% if party.customer.vat_registered %}<div class="requisite-line">ІПН платника ПДВ: {{ party.customer.vat_number | e }}</div>{% endif %}
+      <div class="requisite-line">Платник: {{ 'той самий' if party.payer_is_customer else party.payer.legal_name | e }}</div>
+      <div class="requisite-line">Замовлення: {{ (doc.order_reference or 'Без замовлення') | e }}</div>
+    </td>
+  </tr></table>
+  {% if party.bank.iban %}
+  <table class="payment"><tr><td>
+    <span class="meta-label">Реквізити для оплати</span>
+    <div class="iban">{{ party.bank.iban | e }}</div>
+    <div class="requisite-line">{{ party.bank.bank_name | e }}{% if party.bank.bank_mfo %} · МФО {{ party.bank.bank_mfo | e }}{% endif %}</div>
+  </td></tr></table>
+  {% endif %}
   <table class="items">
-    <colgroup><col style="width:5%"><col style="width:42%"><col style="width:8%"><col style="width:12%"><col style="width:16%"><col style="width:17%"></colgroup>
-    <thead><tr><th>№</th><th>Назва</th><th>Од.</th><th>Кількість</th><th>Ціна без ПДВ</th><th>Сума без ПДВ</th></tr></thead>
-    <tbody>
-      {% for row in items %}
-      <tr>
-        <td>{{ loop.index }}</td>
-        <td class="description">{{ row.product_name | e }}{% if row.description and row.description != row.product_name %}<br>{{ row.description | e }}{% endif %}</td>
-        <td class="unit">{{ row.uom | e }}</td>
-        <td class="number">{{ quantity_uk(row.qty) }}</td>
-        <td class="number">{{ rate_uk(row.net_rate) }}</td>
-        <td class="number">{{ money_uk(row.net_amount) }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
+    <colgroup><col style="width:4%"><col style="width:34%"><col style="width:7%"><col style="width:18%"><col style="width:18%"><col style="width:19%"></colgroup>
+    <thead><tr><th class="row-index">№</th><th>Назва</th><th class="unit">Од.</th><th class="number">Кількість</th><th class="number">Ціна без ПДВ, грн</th><th class="number">Сума без ПДВ, грн</th></tr></thead>
+    <tbody>{% for row in items %}<tr>
+      <td class="row-index">{{ loop.index }}</td>
+      <td><div class="item-name">{{ row.product_name | e }}</div>{% if row.description and row.description != row.product_name %}<div class="item-description">{{ row.description | e }}</div>{% endif %}</td>
+      <td class="unit">{{ row.uom | e }}</td>
+      <td class="number">{{ quantity_uk(row.qty) }}</td>
+      <td class="number">{{ rate_uk(row.net_rate) }}</td>
+      <td class="number line-amount">{{ money_uk(row.net_amount) }}</td>
+    </tr>{% endfor %}</tbody>
   </table>
   <div class="final-block">
-    <table class="totals">
-      <tr><td class="label">Всього без ПДВ:</td><td class="value">{{ money_uk(doc.net_total) }}</td></tr>
-      {% if tax_label != 'Без ПДВ' %}<tr><td class="label">{{ tax_label | e }}:</td><td class="value">{{ money_uk(doc.vat_total) }}</td></tr>{% endif %}
-      <tr><td class="label"><strong>Всього:</strong></td><td class="value">{{ money_uk(doc.grand_total) }}</td></tr>
-    </table>
-    <div class="words">Всього на суму:<strong>{{ amount_in_words_uk(doc.grand_total) | e }}</strong>{{ tax_label | e }}</div>
-    <div class="signing">
-      Виписав(ла): <span class="signature-line">{% if images.get('signature') %}<img class="signature-image" alt="Зображення підпису" src="{{ images.signature | e }}">{% endif %}</span>
-      {% if images.get('stamp') %}<img class="stamp-image" alt="Зображення печатки" src="{{ images.stamp | e }}">{% endif %}
-      <div class="signatory-name">{{ party.issuer.signatory | e }}{% if party.issuer.signatory_position %} · {{ party.issuer.signatory_position | e }}{% endif %}</div>
-    </div>
+    <table class="settlement"><tr>
+      <td class="words-cell"><div class="words"><span class="meta-label">Всього на суму:</span><strong>{{ amount_in_words_uk(doc.grand_total) | e }}</strong><span class="muted">{{ tax_label | e }}</span></div></td>
+      <td class="totals-cell"><table class="totals">
+        <tr><td class="label">Всього без ПДВ</td><td class="value">{{ money_uk(doc.net_total) }}</td></tr>
+        {% if tax_label != 'Без ПДВ' %}<tr><td class="label">{{ tax_label | e }}</td><td class="value">{{ money_uk(doc.vat_total) }}</td></tr>{% endif %}
+        <tr class="grand"><td class="label">До сплати</td><td class="value">{{ money_uk(doc.grand_total) }} <span class="currency">грн</span></td></tr>
+      </table></td>
+    </tr></table>
+    <table class="signing"><tr>
+      <td><div class="role">Виписав(ла):</div><div class="signature-line">{% if images.get('signature') %}<img class="signature-image" alt="Зображення підпису" src="{{ images.signature | e }}">{% endif %}</div><div class="signatory-name">{{ party.issuer.signatory | e }}</div>{% if party.issuer.signatory_position %}<div class="muted">{{ party.issuer.signatory_position | e }}</div>{% endif %}</td>
+      <td class="seal">{% if images.get('stamp') %}<img class="stamp-image" alt="Зображення печатки" src="{{ images.stamp | e }}">{% endif %}</td>
+    </tr></table>
   </div>
 </div>
