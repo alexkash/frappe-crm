@@ -90,3 +90,22 @@ Final local frontend311/311; scoped ESLint, JS syntax and whitespace checks pass
 No VPS services, production data or migration/archive files were touched for this
 follow-up. Combine this follow-up commit with the coordinator's imported flow
 commit before final acceptance; no separate flow image has been built here.
+
+## PR integration and bot review
+
+PR1 uses a clean `main`-based branch (`alexkash/billing-flow-release`) with the
+already installed billing baseline and this flow; migration/archive work is
+excluded. Codex review reproduced stale contract/product/bank selection responses
+and JSON-encoded grouped PDF requests. Source-bound guards now cover both invoice
+and act source loaders, product rows and bank choices; grouped PDF routing parses
+the RPC object before deciding between saved billing archives and native printing.
+Eight asynchronous selection/control cases and one real-runtime grouped-PDF test
+were added. The local PDF routing probe was observed RED then GREEN.
+
+CodeRabbit's ten comments covered the CI/l10n findings. User-facing messages use
+Frappe translation functions and whitelisted print arguments have compatible type
+annotations. Standalone synthetic QA programs run under `main()`; audited actor,
+commit, native-guest delegation and v15 File-subclass exceptions use specific
+Semgrep rule IDs with explanations. No scan paths/rules were disabled.
+Local frontend319/319, scoped lints/format/syntax and the complete addon/QA Frappe
+Semgrep ruleset pass. Updated GitHub/runtime acceptance and rollout are pending.

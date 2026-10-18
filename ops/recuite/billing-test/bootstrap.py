@@ -63,6 +63,8 @@ def bootstrap():
 	).items():
 		update_site_config(key, value)
 	frappe.connect()
+	# Isolated synthetic-site actor; this is not a request handler.
+	# nosemgrep: frappe-semgrep-rules.rules.security.frappe-setuser
 	frappe.set_user("Administrator")
 	install_app("crm")
 	install_app("recuite_billing")
@@ -96,6 +98,8 @@ def bootstrap():
 	enable_setup_wizard_complete("crm")
 	frappe.db.set_single_value("System Settings", "enable_scheduler", 0)
 	frappe.db.set_single_value("FCRM Settings", "currency", "UAH")
+	# Separate HTTP/restore processes must see the synthetic fixtures.
+	# nosemgrep: frappe-semgrep-rules.rules.frappe-manual-commit
 	frappe.db.commit()
 	frappe.destroy()
 	(SITES / SITE / "site_config.json").chmod(0o600)

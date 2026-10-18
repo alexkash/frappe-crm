@@ -10,12 +10,15 @@ const source = existsSync(scriptPath) ? readFileSync(scriptPath, 'utf8') : ''
 
 function loadNavigation(frappe = {}) {
   let onReady
-  new Function('$', 'frappe', source)(() => ({
-    on: (event, handler) => {
-      expect(event).toBe('app_ready')
-      onReady = handler
-    },
-  }), frappe)
+  new Function('$', 'frappe', source)(
+    () => ({
+      on: (event, handler) => {
+        expect(event).toBe('app_ready')
+        onReady = handler
+      },
+    }),
+    frappe,
+  )
   return () => onReady?.()
 }
 
@@ -44,7 +47,9 @@ describe('billing return navigation', () => {
   it('confirms before discarding an unsaved form and keeps modified clicks native', () => {
     document.body.innerHTML = '<a class="navbar-home" href="/app">Frappe</a>'
     const confirm = vi.fn()
-    const navigate = vi.spyOn(window.location, 'assign').mockImplementation(() => {})
+    const navigate = vi
+      .spyOn(window.location, 'assign')
+      .mockImplementation(() => {})
     window.cur_frm = { is_dirty: () => true, beforeUnloadListener: () => {} }
     loadNavigation({ get_route: () => ['Form', 'UA Contract'], confirm })()
     const link = document.querySelector('a[href="/crm/billing"]')
@@ -55,7 +60,10 @@ describe('billing return navigation', () => {
     expect(navigate).not.toHaveBeenCalled()
     confirm.mock.calls[0][1]()
     expect(navigate).toHaveBeenCalledWith(link.href)
-    const modified = new MouseEvent('click', { cancelable: true, ctrlKey: true })
+    const modified = new MouseEvent('click', {
+      cancelable: true,
+      ctrlKey: true,
+    })
     link.dispatchEvent(modified)
     expect(modified.defaultPrevented).toBe(false)
     expect(confirm).toHaveBeenCalledOnce()

@@ -2,6 +2,7 @@ from pathlib import Path
 from uuid import uuid4
 
 import frappe
+from frappe import _
 from frappe.core.doctype.file.file import File, get_content_hash
 
 from recuite_billing.attachments import prepare_content, validate_billing_file
@@ -39,7 +40,7 @@ class BillingFile(File):
 		if independent_copy:
 			validate_billing_file(self, "save_file")
 			if self.name and frappe.db.exists("File", self.name):
-				frappe.throw("Завантажте новий файл замість зміни збереженого вмісту")
+				frappe.throw(_("Завантажте новий файл замість зміни збереженого вмісту"))
 			content, extension = prepare_content(self, content if content is not None else self.get_content())
 			self.file_type = extension.lstrip(".").upper()
 		elif content is not None and self.is_private:

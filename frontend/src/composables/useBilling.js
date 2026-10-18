@@ -10,13 +10,17 @@ export function useBilling() {
   return capabilities
 }
 
-
 export function useBillingDocumentTab(billing, route, fallback) {
   const activeTab = ref(fallback)
   watch(
-    [() => route.query.tab, () => billing.data?.enabled, () => billing.data?.can_read],
+    [
+      () => route.query.tab,
+      () => billing.data?.enabled,
+      () => billing.data?.can_read,
+    ],
     ([tab, enabled, canRead]) => {
-      if (tab === 'documents' && enabled && canRead) activeTab.value = 'documents'
+      if (tab === 'documents' && enabled && canRead)
+        activeTab.value = 'documents'
     },
     { immediate: true },
   )

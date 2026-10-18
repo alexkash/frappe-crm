@@ -1,6 +1,7 @@
 import json
 
 import frappe
+from frappe import _
 
 from recuite_billing.documents import ITEM_FIELDS, active_periods, dates, record
 
@@ -8,17 +9,17 @@ from recuite_billing.documents import ITEM_FIELDS, active_periods, dates, record
 @frappe.whitelist(methods=["POST"])
 def create_invoice(contract: str, period_from: str, period_to: str) -> dict:
 	if not frappe.has_permission("UA Invoice", "create"):
-		frappe.throw("Немає права створювати рахунки", frappe.PermissionError)
+		frappe.throw(_("Немає права створювати рахунки"), frappe.PermissionError)
 	source = record("UA Contract", contract, lock=True)
 	if source.disabled:
-		frappe.throw("Договір закритий")
+		frappe.throw(_("Договір закритий"))
 	first, last = dates(period_from, period_to)
 	rows = active_periods("UA Invoice", "contract", source.name, first, last)
 	if rows:
 		if len(rows) == 1 and rows[0].period_from == first and rows[0].period_to == last:
 			doc = record("UA Invoice", rows[0].name, lock=True)
 			return {"name": doc.name, "existing": True}
-		frappe.throw("За цим договором уже існує рахунок із перехресним періодом")
+		frappe.throw(_("За цим договором уже існує рахунок із перехресним періодом"))
 	doc = frappe.get_doc(
 		{
 			"doctype": "UA Invoice",
@@ -38,21 +39,21 @@ def create_invoice(contract: str, period_from: str, period_to: str) -> dict:
 @frappe.whitelist(methods=["POST"])
 def create_act(invoice: str, period_from: str, period_to: str, items: list[dict] | str) -> dict:
 	if not frappe.has_permission("UA Act", "create"):
-		frappe.throw("Немає права створювати акти", frappe.PermissionError)
+		frappe.throw(_("Немає права створювати акти"), frappe.PermissionError)
 	if isinstance(items, str):
 		items = frappe.parse_json(items)
 	if not isinstance(items, list) or not items or any(not isinstance(row, dict) for row in items):
-		frappe.throw("Оберіть позиції рахунку та кількість")
+		frappe.throw(_("Оберіть позиції рахунку та кількість"))
 	source = record("UA Invoice", invoice, lock=True)
 	if source.docstatus != 1:
-		frappe.throw("Акт можна створити лише до випущеного рахунку")
+		frappe.throw(_("Акт можна створити лише до випущеного рахунку"))
 	first, last = dates(period_from, period_to)
 	rows = active_periods("UA Act", "invoice", source.name, first, last)
 	if rows:
 		if len(rows) == 1 and rows[0].period_from == first and rows[0].period_to == last:
 			doc = record("UA Act", rows[0].name, lock=True)
 			return {"name": doc.name, "existing": True}
-		frappe.throw("До рахунку вже існує акт із перехресним періодом")
+		frappe.throw(_("До рахунку вже існує акт із перехресним періодом"))
 	doc = frappe.get_doc(
 		{
 			"doctype": "UA Act",
@@ -85,13 +86,13 @@ def get_capabilities() -> dict:
 def get_organization_documents(organization: str, kind: str, start: int = 0, page_length: int = 20) -> dict:
 	kinds = {"contracts": "UA Contract", "invoices": "UA Invoice", "acts": "UA Act"}
 	if kind not in kinds:
-		frappe.throw("Невідомий тип документів")
+		frappe.throw(_("Невідомий тип документів"))
 	try:
 		start, page_length = int(start), int(page_length)
 		if start < 0 or not 1 <= page_length <= 100:
 			raise ValueError
 	except (ValueError, TypeError):
-		frappe.throw("Неприпустимі параметри сторінки")
+		frappe.throw(_("Неприпустимі параметри сторінки"))
 	record("CRM Organization", organization)
 	fields = ["name", "issuer", "docstatus", "modified"] + (
 		["contract_number", "contract_date", "disabled"]
@@ -116,7 +117,7 @@ def get_period_suggestion(doctype: str, name: str) -> dict:
 	from recuite_billing.periods import periods_in_range
 
 	if doctype not in {"UA Contract", "UA Invoice"}:
-		frappe.throw("Невідоме джерело періодів")
+		frappe.throw(_("Невідоме джерело періодів"))
 	source = record(doctype, name)
 	if doctype == "UA Contract":
 		first, last, cadence, target, field = (
@@ -163,7 +164,7 @@ def get_act_items(invoice: str) -> list:
 
 	source = record("UA Invoice", invoice, lock=True)
 	if source.docstatus != 1:
-		frappe.throw("Спочатку випустіть рахунок")
+		frappe.throw(_("Спочатку випустіть рахунок"))
 	acts = frappe.db.get_values(
 		"UA Act", {"invoice": invoice, "docstatus": 1}, "name", pluck=True, for_update=True
 	)
@@ -224,7 +225,7 @@ def _service_anchor(invoice):
 @frappe.whitelist()
 def get_document_context(doctype: str, name: str) -> dict:
 	if doctype not in {"UA Contract", "UA Invoice", "UA Act"}:
-		frappe.throw("Невідомий тип документа")
+		frappe.throw(_("Невідомий тип документа"))
 	source = record(doctype, name)
 	related = []
 	for field, parent_type in (("contract", "UA Contract"), ("invoice", "UA Invoice")):

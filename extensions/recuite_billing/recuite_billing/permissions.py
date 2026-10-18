@@ -1,6 +1,7 @@
 from contextvars import ContextVar
 
 import frappe
+from frappe import _
 from frappe.model.db_query import DatabaseQuery
 
 PROTECTED_DOCTYPES = {"UA Contract", "UA Invoice", "UA Act", "UA Print Asset"}
@@ -110,5 +111,7 @@ def assert_owned_rows(doc, fieldname):
 			fieldname,
 		):
 			frappe.throw(
-				"Рядок належить іншому документу; додайте новий рядок замість перенесення його ідентифікатора"
+				_(
+					"Рядок належить іншому документу; додайте новий рядок замість перенесення його ідентифікатора"
+				)
 			)

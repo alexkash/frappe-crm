@@ -21,6 +21,8 @@ permission_query_conditions = {
 	"UA Invoice": "recuite_billing.permissions.invoice_query_conditions",
 	"UA Act": "recuite_billing.permissions.act_query_conditions",
 }
+# Frappe v15 requires this subclass to enforce frozen private billing attachments.
+# nosemgrep: frappe-semgrep-rules.rules.override-doctype-class
 override_doctype_class = {"File": "recuite_billing.overrides.file.BillingFile"}
 override_whitelisted_methods = {
 	"frappe.utils.print_format.download_pdf": "recuite_billing.printing.download_pdf",

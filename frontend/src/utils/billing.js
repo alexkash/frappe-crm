@@ -27,13 +27,20 @@ export function documentStatus(status) {
   return ['Чернетка', 'Випущено', 'Скасовано'][status] || ''
 }
 
-
 export function documentAction(kind, row, capabilities) {
-  if (kind === 'contracts' && !row.disabled && capabilities?.create?.['UA Invoice'])
+  if (
+    kind === 'contracts' &&
+    !row.disabled &&
+    capabilities?.create?.['UA Invoice']
+  )
     return { label: 'Створити рахунок', action: 'invoice' }
   if (kind === 'invoices' && row.docstatus === 0)
     return { label: 'Продовжити оформлення', action: null }
-  if (kind === 'invoices' && row.docstatus === 1 && capabilities?.create?.['UA Act'])
+  if (
+    kind === 'invoices' &&
+    row.docstatus === 1 &&
+    capabilities?.create?.['UA Act']
+  )
     return { label: 'Створити акт', action: 'act' }
   return null
 }

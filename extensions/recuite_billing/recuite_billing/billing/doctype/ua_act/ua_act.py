@@ -1,4 +1,5 @@
 import frappe
+from frappe import _
 from frappe.model.document import Document
 
 from recuite_billing.documents import (
@@ -22,7 +23,7 @@ class UAAct(Document):
 		if self.invoice:
 			record("UA Invoice", self.invoice, lock=True)
 		if not self.is_new() and frappe.db.get_value(self.doctype, self.name, "invoice") != self.invoice:
-			frappe.throw("Для іншого рахунку створіть нову чернетку акта")
+			frappe.throw(_("Для іншого рахунку створіть нову чернетку акта"))
 		return super().check_if_latest()
 
 	def before_insert(self):

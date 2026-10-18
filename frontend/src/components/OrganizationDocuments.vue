@@ -105,7 +105,11 @@ const kind = ref(
     : 'contracts',
 )
 const initialStart = Number(route.query.document_start)
-const start = ref(Number.isFinite(initialStart) ? Math.max(0, Math.floor(initialStart / 20) * 20) : 0)
+const start = ref(
+  Number.isFinite(initialStart)
+    ? Math.max(0, Math.floor(initialStart / 20) * 20)
+    : 0,
+)
 const capabilities = useBilling()
 const doctype = computed(
   () => kinds.find((item) => item.value === kind.value).doctype,
@@ -135,7 +139,10 @@ const pdfURL = (name) =>
 const rowAction = (row) => documentAction(kind.value, row, capabilities.data)
 function actionURL(row) {
   const action = rowAction(row)?.action
-  return documentURL(doctype.value, row.name) + (action ? `?billing_action=${action}` : '')
+  return (
+    documentURL(doctype.value, row.name) +
+    (action ? `?billing_action=${action}` : '')
+  )
 }
 function remember() {
   router.replace({

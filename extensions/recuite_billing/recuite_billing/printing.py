@@ -5,6 +5,7 @@ from pathlib import Path
 from uuid import uuid4
 
 import frappe
+from frappe import _
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from markupsafe import escape
 from pypdf import PdfReader, PdfWriter
@@ -31,7 +32,7 @@ def tax_summary(items):
 
 def render_html(doc, *, preview=False):
 	if doc.doctype not in DOCUMENTS:
-		frappe.throw("Невідомий тип документа")
+		frappe.throw(_("Невідомий тип документа"))
 	env = Environment(
 		loader=FileSystemLoader(Path(__file__).parent / "templates"),
 		autoescape=True,
@@ -99,24 +100,28 @@ def archive_document(doc):
 
 def get_document_pdf(doctype, name):
 	if doctype not in DOCUMENTS:
-		frappe.throw("Невідомий тип документа")
+		frappe.throw(_("Невідомий тип документа"))
 	doc = record(doctype, name)
 	doc.check_permission("print")
 	if doc.docstatus not in (1, 2) or not doc.pdf_file:
-		frappe.throw("Фінальний PDF доступний після випуску документа")
+		frappe.throw(_("Фінальний PDF доступний після випуску документа"))
 	file = record("File", doc.pdf_file)
 	if (file.attached_to_doctype, file.attached_to_name, file.is_private) != (doctype, name, 1):
-		frappe.throw("Пошкоджена прив'язка архівного PDF")
+		frappe.throw(_("Пошкоджена прив'язка архівного PDF"))
 	if hashlib.sha256(file.get_content()).hexdigest() != doc.pdf_sha256:
-		frappe.throw("Контрольна сума архівного PDF не збігається")
+		frappe.throw(_("Контрольна сума архівного PDF не збігається"))
 	return file
 
 
+# Preserve native non-billing guest printing; billing always checks read and print permissions.
+# nosemgrep: frappe-semgrep-rules.rules.security.guest-whitelisted-method
 @frappe.whitelist(allow_guest=True)
-def download_pdf(doctype, name, **kwargs):
+def download_pdf(doctype: str, name: str, **kwargs):
 	if doctype not in DOCUMENTS:
 		from frappe.utils.print_format import download_pdf as native
 
+		# The callable is a fixed import; the wrapper preserves native keyword filtering.
+		# nosemgrep: frappe-semgrep-rules.rules.security.frappe-codeinjection-eval
 		return frappe.call(native, doctype=doctype, name=name, **kwargs)
 	doc = record(doctype, name)
 	doc.check_permission("print")
@@ -131,7 +136,8 @@ def download_pdf(doctype, name, **kwargs):
 
 
 @frappe.whitelist()
-def download_multi_pdf(doctype, name, **kwargs):
+def download_multi_pdf(doctype: str | dict, name: str | list | None, **kwargs):
+	doctype = _grouped_doctype(doctype)
 	groups = (
 		doctype
 		if isinstance(doctype, dict)
@@ -142,7 +148,7 @@ def download_multi_pdf(doctype, name, **kwargs):
 
 		return native(doctype, name, **kwargs)
 	if sum(len(names) for names in groups.values()) > 100:
-		frappe.throw("Оберіть не більше 100 документів")
+		frappe.throw(_("Оберіть не більше 100 документів"))
 	writer = PdfWriter()
 	for kind, names in groups.items():
 		for identifier in names:
@@ -165,13 +171,22 @@ def download_multi_pdf(doctype, name, **kwargs):
 
 
 @frappe.whitelist()
-def download_multi_pdf_async(doctype, name, **kwargs):
+def download_multi_pdf_async(doctype: str | dict, name: str | list | None, **kwargs):
+	doctype = _grouped_doctype(doctype)
 	groups = doctype if isinstance(doctype, dict) else {doctype: []}
 	if DOCUMENTS.intersection(groups):
-		frappe.throw("Для фінансових документів використайте звичайне завантаження PDF (до 100 документів)")
+		frappe.throw(
+			_("Для фінансових документів використайте звичайне завантаження PDF (до 100 документів)")
+		)
 	from frappe.utils.print_format import download_multi_pdf_async as native
 
 	return native(doctype, name, **kwargs)
+
+
+def _grouped_doctype(doctype):
+	if isinstance(doctype, str) and doctype.lstrip().startswith("{"):
+		return frappe.parse_json(doctype)
+	return doctype
 
 
 def pdf_body_html(jenv, template, print_format, args):
@@ -191,4 +206,4 @@ def pdf_body_html(jenv, template, print_format, args):
 
 def prevent_archive_rerender(doctype, name, **kwargs):
 	if doctype in DOCUMENTS and frappe.db.get_value(doctype, name, "docstatus"):
-		frappe.throw("Використайте збережений архівний PDF документа")
+		frappe.throw(_("Використайте збережений архівний PDF документа"))

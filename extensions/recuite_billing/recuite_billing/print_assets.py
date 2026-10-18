@@ -3,6 +3,7 @@ import hashlib
 import json
 
 import frappe
+from frappe import _
 
 from recuite_billing.attachments import archival_write
 from recuite_billing.documents import record
@@ -16,12 +17,12 @@ def selected_images(doc):
 			continue
 		asset = record("UA Print Asset", doc.get(f"{kind}_asset"), lock=True)
 		if asset.issuer != doc.issuer or asset.asset_type != kind.title() or not asset.active:
-			frappe.throw("Оберіть активне зображення потрібного типу цього виконавця")
+			frappe.throw(_("Оберіть активне зображення потрібного типу цього виконавця"))
 		if kind == "signature" and (asset.signatory, asset.signatory_position or "") != (
 			party["issuer"]["signatory"],
 			party["issuer"]["signatory_position"] or "",
 		):
-			frappe.throw("Підписант зображення має відповідати підписанту документа")
+			frappe.throw(_("Підписант зображення має відповідати підписанту документа"))
 		name = frappe.db.get_value(
 			"File",
 			{
@@ -33,7 +34,7 @@ def selected_images(doc):
 			"name",
 		)
 		if not name:
-			frappe.throw("Збережене приватне зображення недоступне")
+			frappe.throw(_("Збережене приватне зображення недоступне"))
 		file = record("File", name)
 		result[kind] = (asset, file.get_content())
 	return result
@@ -75,10 +76,10 @@ def get_print_images(doc, *, preview=False):
 				doc.name,
 				1,
 			):
-				frappe.throw("Пошкоджена прив'язка архівного зображення")
+				frappe.throw(_("Пошкоджена прив'язка архівного зображення"))
 			content = file.get_content()
 			if hashlib.sha256(content).hexdigest() != image["sha256"]:
-				frappe.throw("Контрольна сума архівного зображення не збігається")
+				frappe.throw(_("Контрольна сума архівного зображення не збігається"))
 			contents[kind] = content
 	return {
 		kind: "data:image/png;base64," + base64.b64encode(content).decode("ascii")

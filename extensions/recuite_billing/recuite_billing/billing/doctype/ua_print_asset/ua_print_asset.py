@@ -1,13 +1,14 @@
 import frappe
+from frappe import _
 from frappe.model.document import Document
 
 
 class UAPrintAsset(Document):
 	def validate(self):
 		if self.active and not self.image:
-			frappe.throw("Додайте приватне зображення перед активацією")
+			frappe.throw(_("Додайте приватне зображення перед активацією"))
 		if self.active and self.asset_type == "Signature" and not self.signatory:
-			frappe.throw("Вкажіть ПІБ підписанта")
+			frappe.throw(_("Вкажіть ПІБ підписанта"))
 		if self.image and not frappe.db.exists(
 			"File",
 			{
@@ -17,4 +18,4 @@ class UAPrintAsset(Document):
 				"attached_to_name": self.name,
 			},
 		):
-			frappe.throw("Зображення має бути приватним вкладенням цієї картки")
+			frappe.throw(_("Зображення має бути приватним вкладенням цієї картки"))

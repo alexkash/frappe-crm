@@ -13,6 +13,19 @@ from recuite_billing.tests.test_print_assets import asset, png_bytes
 
 
 class TestPrinting(FrappeTestCase):
+	def test_json_grouped_pdf_uses_archives_and_cannot_start_async_rerender(self):
+		from recuite_billing.printing import download_multi_pdf, download_multi_pdf_async
+
+		invoice = self.draft()
+		with patch("recuite_billing.printing.render_pdf_bytes", return_value=pdf_bytes()):
+			invoice.submit()
+		groups = json.dumps({"UA Invoice": [invoice.name]})
+		with patch("recuite_billing.printing.render_html", side_effect=AssertionError("Must use archive")):
+			download_multi_pdf(groups, None)
+			self.assertEqual(len(PdfReader(BytesIO(frappe.local.response.filecontent)).pages), 1)
+		with self.assertRaises(frappe.ValidationError):
+			download_multi_pdf_async(groups, None)
+
 	def draft(self):
 		from recuite_billing.api import create_invoice
 
