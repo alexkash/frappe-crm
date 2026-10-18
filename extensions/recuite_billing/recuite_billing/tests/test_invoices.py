@@ -19,6 +19,7 @@ class TestInvoices(FrappeTestCase):
 		for contract_name in (other.name, None):
 			with self.subTest(contract=contract_name):
 				amendment = frappe.copy_doc(previous, ignore_no_copy=False)
+				amendment.docstatus = 0
 				amendment.amended_from = previous.name
 				amendment.contract = contract_name
 				frappe.db.savepoint("amendment_case")
@@ -28,6 +29,7 @@ class TestInvoices(FrappeTestCase):
 				finally:
 					frappe.db.rollback(save_point="amendment_case")
 		amendment = frappe.copy_doc(previous, ignore_no_copy=False)
+		amendment.docstatus = 0
 		amendment.amended_from = previous.name
 		amendment.insert().submit()
 		self.assertEqual(amendment.contract, source.name)
