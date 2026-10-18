@@ -7,6 +7,7 @@ app_license = "MIT"
 required_apps = ["crm"]
 after_install = "recuite_billing.install.after_install"
 after_migrate = "recuite_billing.install.after_migrate"
+app_include_js = ["/assets/recuite_billing/js/navigation.js"]
 
 has_permission = {
 	"UA Contract": "recuite_billing.permissions.has_document_permission",
