@@ -121,3 +121,31 @@ Root-private протокол: `/opt/frappe-crm/billing-update/20261018/rollout-
 83 billing tests, 296 frontend tests, 633 CRM tests та PDF/restore/UI сценарії
 перевірені до викладки в ізольованому середовищі; на production виконані лише
 перевірки встановлення, цілісності, доступності та читання UI.
+
+
+## Повернення з форм до CRM
+
+Наступний запит користувача: зробити зручним повернення з `/app/` у CRM.
+Додано глобальний Desk asset через `app_include_js`: постійна кнопка **← CRM**
+повертає на `/crm/billing` зі списків і форм, включно з каталогом та реквізитами.
+Для незбереженої форми є явне підтвердження Frappe; скасування залишає зміни
+на місці, підтвердження виходить без подвійного browser warning. Ctrl/Cmd та інші
+модифіковані переходи лишаються звичайними діями посилання.
+
+- Код: `d33b0db45`, `1b6ad350c`. 299 frontend tests — PASS, включно з RED→GREEN
+  для створення посилання й підтвердження виходу; JS/Python syntax — PASS.
+- Новий робочий образ: `recuite/crm:billing-nav-20261018-1b6ad350c`,
+  `sha256:7b3e53aea17b5a3d1e7f8a7488baaa164107b090dd3e21aa08f4e1b3517e96d5`.
+  База — попередній `21beb858…`; overlay змінює лише hooks.py і navigation.js
+  billing app. Міграцій, fixtures або змін моделей немає.
+- Ізольований Chrome: список → форма → CRM → список, скасування й підтвердження
+  виходу з незбереженої форми, мобільний екран390×844 — PASS. Помилок застосунку
+  в console немає; сторонні повідомлення browser extension відфільтровані.
+- Production: app-only image update + штатний clear-cache; site/common config і
+  apps.txt SHA незмінні. HTTPS ping та SHA navigation.js перевірені. У реальному
+  authenticated Chrome кнопка видима і повертає з UA Contract у «Документи»;
+  production записи не створені/не редагувалися, помилок застосунку немає.
+- Receipt: `/opt/frappe-crm/billing-update/20261018/navigation-v4/rollout-receipt.json`.
+  Попередній Compose збережений; rollback тільки app-image/cache, без відкату БД.
+  Власні private webservices зупинені після перевірки; вікно повернене власнику
+  паралельних integration tests. Інші браузери не перевірялися.
