@@ -11,6 +11,7 @@ RUN rm -rf apps/crm/crm/public/frontend
 COPY --chown=frappe:frappe ops/recuite/billing-test/.frontend-build apps/crm/crm/public/frontend
 COPY --chown=frappe:frappe extensions/recuite_billing apps/recuite_billing
 RUN env/bin/pip install --no-deps -e apps/recuite_billing \
+    && ln -s /home/frappe/frappe-bench/apps/recuite_billing/recuite_billing/public /home/frappe/frappe-bench/assets/recuite_billing \
     && ls -1 apps > sites/apps.txt \
     && env/bin/python -c 'import frappe,crm,recuite_billing; assert frappe.__version__ == "15.123.1"; assert crm.__version__ == "1.88.0"; assert recuite_billing.__version__ == "0.1.0"' \
     && test -s apps/crm/crm/public/frontend/index.html \

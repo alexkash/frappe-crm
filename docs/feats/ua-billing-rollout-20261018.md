@@ -81,3 +81,43 @@ restore receipt `66b4060063ddfcc393962adda04e838cd7b415a37b0bf42534b688c892a5320
 checkpoint старі DB/config/apps.txt/Compose та image, потім початкові режими служб.
 Не робити uninstall або volume deletion. Після відкриття записів автоматичний
 відкат БД заборонений: потрібне окреме рішення щодо нових даних.
+
+
+## Виконано
+
+Користувач підтвердив наведений manifest і технічне вікно. Оновлення завершене
+18.10.2026; доступ до запису відновлений після **169,29 секунди**. Початкові
+maintenance/mute/pause відновлені побайтово з оригінальним site config;
+common config не змінений. DB/Redis/proxy не пересоздавалися.
+
+- Фактичний образ: `recuite/crm:billing-20261018-ef08effe-assets`,
+  `sha256:21beb8585428b797ebbef0ccbcecff0a7469dd609ba1ca021236e2e689b4ac76`.
+  Це перевірений кандидат `cb1db0ce…` з одним додатковим посиланням
+  `assets/recuite_billing` на public-каталог застосунку. На production
+  `sites/assets` є посиланням на assets усередині образу, тому посилання слід
+  створювати під час збірки, а не на host у sites volume. Крок доданий до
+  `Dockerfile.local`; код застосунку та залежності не змінювалися.
+- `install-app` і штатний `migrate --skip-search-index` — PASS. Встановлено
+  7 UA DocTypes, 17 custom fields та 3 ролі; ролі користувачам не призначалися.
+- Фінальний backup: `/opt/frappe-crm/billing-update/20261018/backup-final`;
+  manifest SHA-256
+  `ea876e3cdd4a9ea2c1ce79f5ea3695b19affa4e2c4b2864fa54d7c36d4937a74`.
+  290 tables / 8241 rows, public0/private1. Два fingerprints і файлові hashes
+  збіглися. READ-lock4,698s, UNLOCK та відсутність його connection перевірені
+  окремо. Копія лишилася root-private на VPS.
+- Контрольні counts CRM-карток, File4, User2, Email Queue0, Communication0 та
+  файли незмінні; усі billing documents порожні. Production fixtures не створені.
+- Усі 6 app services працюють на фактичному новому образі, backend healthy.
+  HTTPS ping200, 39 frontend assets200, billing JS200, Socket.IO200.
+  Guest CRM403 — штатний захист; authenticated Administrator UI працює.
+- У справжньому Chrome перевірені нове меню «Документи», `/crm/billing` та
+  відкриття native списку «Наші виконавці» без створення записів.
+- Compose очікує backend health200 навіть із `--no-deps`, тоді як maintenance
+  повертає503. Після створення всіх app containers перевірений frontend
+  запущено безпосередньо; початковий config відновлений лише після перевірки
+  image/running усіх служб. Після цього health200 підтверджений.
+
+Root-private протокол: `/opt/frappe-crm/billing-update/20261018/rollout-receipt.json`.
+83 billing tests, 296 frontend tests, 633 CRM tests та PDF/restore/UI сценарії
+перевірені до викладки в ізольованому середовищі; на production виконані лише
+перевірки встановлення, цілісності, доступності та читання UI.
