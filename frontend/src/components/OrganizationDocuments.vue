@@ -14,7 +14,7 @@
         >{{ item.label }}</Button
       >
       <a
-        v-if="capabilities.data?.can_create"
+        v-if="capabilities.data?.create?.[doctype]"
         :href="newDocumentURL"
         class="ml-auto rounded border px-3 py-1.5 text-sm"
         >Створити</a
@@ -57,6 +57,13 @@
           >{{ amount(row.grand_total) }} грн</span
         >
         <a
+          v-if="rowAction(row)"
+          :href="actionURL(row)"
+          class="rounded border px-3 py-1.5 text-sm hover:bg-surface-gray-1 focus-visible:outline focus-visible:outline-2"
+          :aria-label="`${rowAction(row).label}: ${row.print_number || row.contract_number || row.name}`"
+          >{{ rowAction(row).label }}</a
+        >
+        <a
           v-if="row.pdf_file"
           :href="pdfURL(row.name)"
           class="rounded border px-3 py-1.5 text-sm"
@@ -80,17 +87,25 @@
 </template>
 <script setup>
 import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Button, ErrorMessage, createResource } from 'frappe-ui'
 import { useBilling } from '@/composables/useBilling'
-import { documentURL, documentStatus } from '@/utils/billing'
+import { documentURL, documentStatus, documentAction } from '@/utils/billing'
 const props = defineProps({ organization: { type: String, required: true } })
 const kinds = [
   { value: 'contracts', label: 'Договори', doctype: 'UA Contract' },
   { value: 'invoices', label: 'Рахунки', doctype: 'UA Invoice' },
   { value: 'acts', label: 'Акти', doctype: 'UA Act' },
 ]
-const kind = ref('contracts')
-const start = ref(0)
+const route = useRoute()
+const router = useRouter()
+const kind = ref(
+  kinds.some((item) => item.value === route.query.kind)
+    ? route.query.kind
+    : 'contracts',
+)
+const initialStart = Number(route.query.document_start)
+const start = ref(Number.isFinite(initialStart) ? Math.max(0, Math.floor(initialStart / 20) * 20) : 0)
 const capabilities = useBilling()
 const doctype = computed(
   () => kinds.find((item) => item.value === kind.value).doctype,
@@ -117,11 +132,28 @@ const amount = (value) =>
   )
 const pdfURL = (name) =>
   `/api/method/recuite_billing.printing.download_pdf?doctype=${encodeURIComponent(doctype.value)}&name=${encodeURIComponent(name)}`
+const rowAction = (row) => documentAction(kind.value, row, capabilities.data)
+function actionURL(row) {
+  const action = rowAction(row)?.action
+  return documentURL(doctype.value, row.name) + (action ? `?billing_action=${action}` : '')
+}
+function remember() {
+  router.replace({
+    query: {
+      ...route.query,
+      tab: 'documents',
+      kind: kind.value,
+      document_start: start.value || undefined,
+    },
+  })
+}
 function select(value) {
   start.value = 0
   kind.value = value
+  remember()
 }
 function page(direction) {
   start.value += direction * 20
+  remember()
 }
 </script>

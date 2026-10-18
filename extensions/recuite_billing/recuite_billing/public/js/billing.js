@@ -8,8 +8,10 @@
   const open = (doctype, result) =>
     frappe.set_route("Form", doctype, result.name);
   async function banks(frm) {
-    if (!frm.doc.issuer || frm.doc.docstatus) return;
-    const issuer = await frappe.db.get_doc("UA Issuer", frm.doc.issuer);
+    const doc = frm.doc;
+    if (!doc.issuer || doc.docstatus) return;
+    const issuer = await frappe.db.get_doc("UA Issuer", doc.issuer);
+    if (frm.doc !== doc) return;
     frm.set_df_property(
       "bank_account",
       "options",
@@ -49,10 +51,15 @@
     }));
   }
   async function periodDialog(frm, target) {
+    if (frm.is_dirty()) return frappe.msgprint("Спочатку збережіть зміни");
+    const doc = frm.doc;
     const suggestion = await api("get_period_suggestion", {
       doctype: frm.doctype,
-      name: frm.doc.name,
+      name: doc.name,
     });
+    if (frm.doc !== doc) return;
+    if (!suggestion.period_from || !suggestion.period_to)
+      return frappe.msgprint("Усі періоди вже мають документи. Продовжіть роботу з пов’язаним документом нижче.");
     const fields = [
       {
         fieldname: "period_from",
@@ -70,7 +77,8 @@
       },
     ];
     if (target === "UA Act") {
-      const rows = await api("get_act_items", { invoice: frm.doc.name });
+      const rows = await api("get_act_items", { invoice: doc.name });
+      if (frm.doc !== doc) return;
       if (!rows.length)
         return frappe.msgprint("Рахунок повністю закритий актами");
       fields.push({
@@ -112,12 +120,14 @@
       fields,
       primary_action_label: "Створити чернетку",
       primary_action: async (values) => {
+        if (frm.doc !== doc || frm.is_dirty())
+          return frappe.msgprint("Документ змінився. Закрийте діалог і повторіть дію.");
         dialog.disable_primary_action();
         try {
           const result =
             target === "UA Act"
               ? await api("create_act", {
-                  invoice: frm.doc.name,
+                  invoice: doc.name,
                   period_from: values.period_from,
                   period_to: values.period_to,
                   items: values.items
@@ -128,10 +138,11 @@
                     })),
                 })
               : await api("create_invoice", {
-                  contract: frm.doc.name,
+                  contract: doc.name,
                   ...values,
                 });
           dialog.hide();
+          if (result.existing) frappe.msgprint("Документ за цей період уже існує. Відкриваємо його.");
           open(target, result);
         } finally {
           dialog.enable_primary_action();
@@ -140,11 +151,70 @@
     });
     dialog.show();
   }
+  const labels = {
+    "UA Contract": "Договір",
+    "UA Invoice": "Рахунок",
+    "UA Act": "Акт",
+  };
+  const documentURL = (doctype, name) =>
+    `/app/${doctype.toLowerCase().replaceAll(" ", "-")}/${encodeURIComponent(name)}`;
+  async function context(frm, isCurrent) {
+    if (frm.is_new()) return;
+    const data = await api("get_document_context", {
+      doctype: frm.doctype,
+      name: frm.doc.name,
+    });
+    if (!isCurrent()) return;
+    const escape = frappe.utils.escape_html;
+    const kind = {
+      "UA Contract": "contracts",
+      "UA Invoice": "invoices",
+      "UA Act": "acts",
+    }[frm.doctype];
+    const company = frm.doc.organization
+      ? `<a href="/crm/organizations/${encodeURIComponent(frm.doc.organization)}?tab=documents&kind=${kind}">До компанії → Документи</a>`
+      : "";
+    const rows = data.related.map((row) => {
+      const status = row.doctype === "UA Contract"
+        ? ""
+        : ["Чернетка", "Випущено", "Скасовано"][row.docstatus] || "";
+      const period = row.period_from
+        ? ` · ${escape(row.period_from)} — ${escape(row.period_to)}`
+        : "";
+      return `<li class="py-2"><a href="${documentURL(row.doctype, row.name)}">${labels[row.doctype]} ${escape(row.print_number || row.contract_number || row.name)}</a> · ${status}${period}</li>`;
+    }).join("");
+    const more = (data.more || []).map((row) =>
+      `<a class="mr-3" href="/app/${row.doctype.toLowerCase().replaceAll(" ", "-")}?${row.field}=${encodeURIComponent(row.value)}">Усі: ${labels[row.doctype]}</a>`,
+    ).join("");
+    frm.dashboard.add_section(
+      `${company}<ul class="list-unstyled mb-0">${rows || '<li class="py-2 text-muted">Пов’язаних документів поки немає</li>'}</ul>${more}`,
+      "Пов’язані документи",
+    );
+  }
+  async function requestedAction(frm) {
+    const url = new URL(window.location.href);
+    const action = url.searchParams.get("billing_action");
+    if (!action) return;
+    url.searchParams.delete("billing_action");
+    window.history.replaceState(window.history.state, "", url);
+    if (frm.is_new()) return;
+    if (
+      action === "invoice" && frm.doctype === "UA Contract" &&
+      !frm.doc.disabled && frappe.model.can_create("UA Invoice")
+    ) return periodDialog(frm, "UA Invoice");
+    if (
+      action === "act" && frm.doctype === "UA Invoice" &&
+      frm.doc.docstatus === 1 && frappe.model.can_create("UA Act")
+    ) return periodDialog(frm, "UA Act");
+  }
   for (const doctype of ["UA Contract", "UA Invoice", "UA Act"]) {
     frappe.ui.form.on(doctype, {
       async refresh(frm) {
+        const doc = frm.doc;
+        const refresh = {};
+        frm._ua_billing_refresh = refresh;
+        const isCurrent = () => frm.doc === doc && frm._ua_billing_refresh === refresh;
         imageQueries(frm);
-        await banks(frm);
         if (doctype !== "UA Contract") {
           frm.set_df_property(
             doctype === "UA Act" ? "invoice" : "contract",
@@ -168,7 +238,6 @@
         }
         if (
           !frm.is_new() &&
-          !frm.is_dirty() &&
           doctype === "UA Contract" &&
           !frm.doc.disabled &&
           frappe.model.can_create("UA Invoice")
@@ -184,6 +253,10 @@
           frm.add_custom_button("Створити акт", () =>
             periodDialog(frm, "UA Act"),
           );
+        if (doctype === "UA Invoice" && frm.doc.docstatus === 0)
+          frm.set_intro("Щоб створити акт, спочатку збережіть і випустіть рахунок.", "blue");
+        if (doctype === "UA Contract" && frm.doc.disabled)
+          frm.set_intro("Договір закритий. Перегляньте пов’язані рахунки й акти нижче.", "blue");
         if (doctype === "UA Act") {
           for (const field of [
             "product_code",
@@ -202,6 +275,10 @@
             );
           frm.fields_dict.items.grid.cannot_add_rows = true;
         }
+        await banks(frm);
+        if (!isCurrent()) return;
+        await context(frm, isCurrent);
+        if (isCurrent()) await requestedAction(frm);
       },
       issuer: banks,
       async contract(frm) {

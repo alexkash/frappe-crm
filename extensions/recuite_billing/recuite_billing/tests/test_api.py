@@ -32,6 +32,9 @@ class TestBillingAPI(FrappeTestCase):
 		with as_user(account):
 			self.assertTrue(get_capabilities()["can_read"])
 			self.assertFalse(get_capabilities()["can_create"])
+			self.assertEqual(
+				get_capabilities()["create"], {"UA Contract": False, "UA Invoice": False, "UA Act": False}
+			)
 
 	def test_period_suggestion_advances_without_creating_a_document(self):
 		from recuite_billing.api import create_invoice, get_period_suggestion
@@ -60,3 +63,38 @@ class TestBillingAPI(FrappeTestCase):
 		period = get_period_suggestion("UA Invoice", invoice.name)
 		self.assertEqual(period, {"period_from": "2026-04-30", "period_to": "2026-05-30"})
 		self.assertEqual(get_act_items(invoice.name)[0]["qty"], "1.000000")
+
+	def test_document_context_lists_related_records_and_rejects_unsupported_sources(self):
+		from recuite_billing.api import create_invoice, get_document_context
+
+		source = contract()
+		invoice = create_invoice(source.name, "2026-01-01", "2026-01-31")
+		context = get_document_context("UA Contract", source.name)
+		self.assertEqual([row["name"] for row in context["related"]], [invoice["name"]])
+		self.assertEqual(context["related"][0]["doctype"], "UA Invoice")
+		context = get_document_context("UA Invoice", invoice["name"])
+		self.assertEqual(context["related"][0]["name"], source.name)
+		for doctype in ["User", "File", "UA Issuer"]:
+			with self.assertRaises(frappe.ValidationError):
+				get_document_context(doctype, source.name)
+
+	def test_document_context_checks_source_permission_and_does_not_leak_other_company(self):
+		from recuite_billing.api import create_invoice, get_document_context
+
+		visible, other = contract(), contract()
+		create_invoice(visible.name, "2026-01-01", "2026-01-31")
+		account = user("UA Billing Reader")
+		frappe.get_doc(
+			{
+				"doctype": "User Permission",
+				"user": account,
+				"allow": "CRM Organization",
+				"for_value": visible.organization,
+				"apply_to_all_doctypes": 1,
+			}
+		).insert(ignore_permissions=True)
+		frappe.clear_cache(user=account)
+		with as_user(account):
+			self.assertEqual(len(get_document_context("UA Contract", visible.name)["related"]), 1)
+			with self.assertRaises(frappe.PermissionError):
+				get_document_context("UA Contract", other.name)

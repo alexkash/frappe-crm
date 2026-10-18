@@ -150,7 +150,7 @@
 
 <script setup>
 import OrganizationDocuments from '@/components/OrganizationDocuments.vue'
-import { useBilling } from '@/composables/useBilling'
+import { useBilling, useBillingDocumentTab } from '@/composables/useBilling'
 import SidePanelLayout from '@/components/SidePanelLayout.vue'
 import Icon from '@/components/Icon.vue'
 import LayoutHeader from '@/components/LayoutHeader.vue'
@@ -332,8 +332,8 @@ function getParsedSections(_sections) {
   })
 }
 
-const activeTab = ref('details')
 const billing = useBilling()
+const activeTab = useBillingDocumentTab(billing, route, 'details')
 const tabs = computed(() => [
   {
     name: 'Details',

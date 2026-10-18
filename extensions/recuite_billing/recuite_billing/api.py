@@ -69,6 +69,10 @@ def create_act(invoice: str, period_from: str, period_to: str, items: list[dict]
 def get_capabilities() -> dict:
 	return {
 		"enabled": True,
+		"create": {
+			kind: bool(frappe.has_permission(kind, "create"))
+			for kind in ("UA Contract", "UA Invoice", "UA Act")
+		},
 		"can_read": any(
 			frappe.has_permission(kind, "read") for kind in ("UA Contract", "UA Invoice", "UA Act")
 		),
@@ -90,7 +94,7 @@ def get_organization_documents(organization: str, kind: str, start: int = 0, pag
 		frappe.throw("Неприпустимі параметри сторінки")
 	record("CRM Organization", organization)
 	fields = ["name", "issuer", "docstatus", "modified"] + (
-		["contract_number", "contract_date"]
+		["contract_number", "contract_date", "disabled"]
 		if kind == "contracts"
 		else ["print_number", "posting_date", "period_from", "period_to", "grand_total", "pdf_file"]
 	)
@@ -215,3 +219,44 @@ def _service_anchor(invoice):
 		json.loads(invoice.party_snapshot or "{}").get("invoice", {}).get("service_anchor")
 		or invoice.period_from
 	)
+
+
+@frappe.whitelist()
+def get_document_context(doctype: str, name: str) -> dict:
+	if doctype not in {"UA Contract", "UA Invoice", "UA Act"}:
+		frappe.throw("Невідомий тип документа")
+	source = record(doctype, name)
+	related = []
+	for field, parent_type in (("contract", "UA Contract"), ("invoice", "UA Invoice")):
+		parent_name = source.get(field)
+		if parent_name and frappe.has_permission(parent_type, "read", doc=parent_name):
+			parent = record(parent_type, parent_name)
+			related.append(
+				{
+					"doctype": parent_type,
+					"name": parent.name,
+					"contract_number": parent.get("contract_number"),
+					"print_number": parent.get("print_number"),
+					"docstatus": parent.docstatus,
+				}
+			)
+	children = {
+		"UA Contract": [("UA Invoice", "contract"), ("UA Act", "contract")],
+		"UA Invoice": [("UA Act", "invoice")],
+		"UA Act": [],
+	}
+	more = []
+	for child_type, field in children[doctype]:
+		if not frappe.has_permission(child_type, "read"):
+			continue
+		rows = frappe.get_list(
+			child_type,
+			filters={field: source.name},
+			fields=["name", "print_number", "docstatus", "period_from", "period_to", "grand_total"],
+			order_by="period_from desc, creation desc",
+			page_length=21,
+		)
+		related.extend({"doctype": child_type, **row} for row in rows[:20])
+		if len(rows) > 20:
+			more.append({"doctype": child_type, "field": field, "value": source.name})
+	return {"related": related, "more": more}
