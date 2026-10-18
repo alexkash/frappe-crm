@@ -91,7 +91,7 @@
     >
       <template #tab-suffix="{ tab, active }">
         <Badge
-          v-if="tab.value !== 'details'"
+          v-if="tab.value !== 'details' && tab.value !== 'documents'"
           :class="[active ? 'bg-surface-gray-10' : 'bg-gray-600']"
           variant="solid"
           theme="gray"
@@ -101,6 +101,10 @@
         </Badge>
       </template>
       <template #tab-panel="{ tab }">
+        <OrganizationDocuments
+          v-if="tab.value === 'documents'"
+          :organization="props.organizationId"
+        />
         <div v-if="tab.name == 'Details'">
           <div
             v-if="sections.data"
@@ -129,7 +133,9 @@
           :options="{ selectable: false, showTooltip: false }"
         />
         <div
-          v-if="!rows.length && tab.name !== 'Details'"
+          v-if="
+            !rows.length && tab.name !== 'Details' && tab.value !== 'documents'
+          "
           class="grid flex-1 place-items-center text-2xl-medium text-ink-gray-4"
         >
           <div class="flex flex-col items-center justify-center space-y-3">
@@ -143,6 +149,8 @@
 </template>
 
 <script setup>
+import OrganizationDocuments from '@/components/OrganizationDocuments.vue'
+import { useBilling, useBillingDocumentTab } from '@/composables/useBilling'
 import SidePanelLayout from '@/components/SidePanelLayout.vue'
 import Icon from '@/components/Icon.vue'
 import LayoutHeader from '@/components/LayoutHeader.vue'
@@ -324,8 +332,9 @@ function getParsedSections(_sections) {
   })
 }
 
-const activeTab = ref('details')
-const tabs = [
+const billing = useBilling()
+const activeTab = useBillingDocumentTab(billing, route, 'details')
+const tabs = computed(() => [
   {
     name: 'Details',
     value: 'details',
@@ -346,7 +355,10 @@ const tabs = [
     iconLeft: h(ContactsIcon, { class: 'h-4 w-4' }),
     count: computed(() => contacts.data?.length),
   },
-]
+  ...(billing.data?.enabled && billing.data?.can_read
+    ? [{ name: 'Documents', value: 'documents', label: 'Документи' }]
+    : []),
+])
 
 const deals = createListResource({
   type: 'list',

@@ -1,0 +1,52 @@
+{% include "_styles.html" %}
+<div class="document">
+  {% if doc.docstatus == 0 %}<div class="draft">ЧЕРНЕТКА</div>{% endif %}
+  {% if images.get('logo') %}<img class="logo" alt="Логотип" src="{{ images.logo | e }}">{% endif %}
+  <table class="requisites">
+    <tr>
+      <td class="label">Постачальник</td>
+      <td>
+        <strong>{{ party.issuer.legal_name | e }}</strong><br>
+        {{ 'РНОКПП' if party.issuer.issuer_type == 'ФОП' else 'ЄДРПОУ' }} {{ party.issuer.registration_code | e }}{% if party.issuer.phone %}, тел. {{ party.issuer.phone | e }}{% endif %}<br>
+        {% if party.issuer.vat_registered %}ІПН платника ПДВ: {{ party.issuer.vat_number | e }}<br>{% endif %}
+        {% if party.bank.iban %}Р/р {{ party.bank.iban | e }} в {{ party.bank.bank_name | e }}{% if party.bank.bank_mfo %}, МФО {{ party.bank.bank_mfo | e }}{% endif %}<br>{% endif %}
+        {% if party.issuer.income_tax_note %}{{ party.issuer.income_tax_note | e }}<br>{% endif %}
+        <span class="details">Адреса: {{ party.issuer.legal_address | e }}</span>
+      </td>
+    </tr>
+    <tr><td class="label">Одержувач</td><td>{{ party.customer.legal_name | e }}</td></tr>
+    <tr><td class="label">Платник</td><td>{{ 'той самий' if party.payer_is_customer else party.payer.legal_name | e }}</td></tr>
+    <tr><td class="label">Замовлення</td><td>{{ (doc.order_reference or 'Без замовлення') | e }}</td></tr>
+  </table>
+  <h1>Рахунок-фактура № {{ (doc.print_number or 'Чернетка') | e }} від {{ date_uk(doc.posting_date) }}</h1>
+  <p class="muted">Період: {{ date_uk(doc.period_from) }} — {{ date_uk(doc.period_to) }}{% if party.get('contract') %} · Договір № {{ party.contract.number | e }}{% endif %}</p>
+  <table class="items">
+    <colgroup><col style="width:5%"><col style="width:42%"><col style="width:8%"><col style="width:12%"><col style="width:16%"><col style="width:17%"></colgroup>
+    <thead><tr><th>№</th><th>Назва</th><th>Од.</th><th>Кількість</th><th>Ціна без ПДВ</th><th>Сума без ПДВ</th></tr></thead>
+    <tbody>
+      {% for row in items %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td class="description">{{ row.product_name | e }}{% if row.description and row.description != row.product_name %}<br>{{ row.description | e }}{% endif %}</td>
+        <td class="unit">{{ row.uom | e }}</td>
+        <td class="number">{{ quantity_uk(row.qty) }}</td>
+        <td class="number">{{ rate_uk(row.net_rate) }}</td>
+        <td class="number">{{ money_uk(row.net_amount) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="final-block">
+    <table class="totals">
+      <tr><td class="label">Всього без ПДВ:</td><td class="value">{{ money_uk(doc.net_total) }}</td></tr>
+      {% if tax_label != 'Без ПДВ' %}<tr><td class="label">{{ tax_label | e }}:</td><td class="value">{{ money_uk(doc.vat_total) }}</td></tr>{% endif %}
+      <tr><td class="label"><strong>Всього:</strong></td><td class="value">{{ money_uk(doc.grand_total) }}</td></tr>
+    </table>
+    <div class="words">Всього на суму:<strong>{{ amount_in_words_uk(doc.grand_total) | e }}</strong>{{ tax_label | e }}</div>
+    <div class="signing">
+      Виписав(ла): <span class="signature-line">{% if images.get('signature') %}<img class="signature-image" alt="Зображення підпису" src="{{ images.signature | e }}">{% endif %}</span>
+      {% if images.get('stamp') %}<img class="stamp-image" alt="Зображення печатки" src="{{ images.stamp | e }}">{% endif %}
+      <div class="signatory-name">{{ party.issuer.signatory | e }}{% if party.issuer.signatory_position %} · {{ party.issuer.signatory_position | e }}{% endif %}</div>
+    </div>
+  </div>
+</div>

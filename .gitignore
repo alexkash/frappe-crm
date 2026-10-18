@@ -27,3 +27,6 @@ AGENTS.md
 .claude
 .pi
 .patch
+
+# Locally compiled assets for the isolated billing runtime image.
+ops/recuite/billing-test/.frontend-build/

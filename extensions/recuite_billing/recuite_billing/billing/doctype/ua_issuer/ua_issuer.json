@@ -1,0 +1,152 @@
+{
+ "doctype": "DocType",
+ "name": "UA Issuer",
+ "module": "Billing",
+ "engine": "InnoDB",
+ "custom": 0,
+ "track_changes": 1,
+ "allow_rename": 0,
+ "make_attachments_public": 0,
+ "field_order": [
+  "issuer_code",
+  "issuer_type",
+  "legal_name",
+  "registration_code",
+  "legal_address",
+  "phone",
+  "vat_registered",
+  "vat_number",
+  "income_tax_note",
+  "signatory",
+  "signatory_position",
+  "place_of_issue",
+  "bank_accounts",
+  "disabled"
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "print": 1,
+   "export": 1,
+   "report": 1
+  },
+  {
+   "role": "UA Billing Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "print": 1,
+   "export": 1,
+   "report": 1
+  },
+  {
+   "role": "UA Billing Reader",
+   "read": 1,
+   "print": 1,
+   "export": 1,
+   "report": 1
+  },
+  {
+   "role": "UA Billing User",
+   "read": 1,
+   "print": 1,
+   "report": 1
+  }
+ ],
+ "actions": [],
+ "links": [],
+ "autoname": "field:issuer_code",
+ "title_field": "legal_name",
+ "fields": [
+  {
+   "fieldname": "issuer_code",
+   "fieldtype": "Data",
+   "label": "Код виконавця",
+   "reqd": 1,
+   "unique": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "issuer_type",
+   "fieldtype": "Select",
+   "label": "Тип",
+   "options": "ФОП\nТОВ",
+   "reqd": 1
+  },
+  {
+   "fieldname": "legal_name",
+   "fieldtype": "Data",
+   "label": "Юридичне найменування",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "registration_code",
+   "fieldtype": "Data",
+   "label": "ЄДРПОУ / РНОКПП"
+  },
+  {
+   "fieldname": "legal_address",
+   "fieldtype": "Small Text",
+   "label": "Юридична адреса"
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "label": "Телефон"
+  },
+  {
+   "fieldname": "vat_registered",
+   "fieldtype": "Check",
+   "label": "Платник ПДВ"
+  },
+  {
+   "fieldname": "vat_number",
+   "fieldtype": "Data",
+   "label": "ІПН платника ПДВ"
+  },
+  {
+   "fieldname": "income_tax_note",
+   "fieldtype": "Small Text",
+   "label": "Статус оподаткування прибутку"
+  },
+  {
+   "fieldname": "signatory",
+   "fieldtype": "Data",
+   "label": "ПІБ підписанта"
+  },
+  {
+   "fieldname": "signatory_position",
+   "fieldtype": "Data",
+   "label": "Посада підписанта"
+  },
+  {
+   "fieldname": "place_of_issue",
+   "fieldtype": "Data",
+   "label": "Місце складання"
+  },
+  {
+   "fieldname": "bank_accounts",
+   "fieldtype": "Table",
+   "label": "Банківські рахунки",
+   "options": "UA Issuer Bank Account"
+  },
+  {
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "label": "Неактивний",
+   "default": "0"
+  }
+ ]
+}

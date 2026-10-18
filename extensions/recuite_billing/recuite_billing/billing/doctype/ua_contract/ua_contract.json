@@ -1,0 +1,151 @@
+{
+ "doctype": "DocType",
+ "name": "UA Contract",
+ "module": "Billing",
+ "engine": "InnoDB",
+ "custom": 0,
+ "track_changes": 1,
+ "allow_rename": 0,
+ "make_attachments_public": 0,
+ "field_order": [
+  "contract_number",
+  "contract_date",
+  "organization",
+  "issuer",
+  "bank_account",
+  "start_date",
+  "end_date",
+  "invoice_cadence",
+  "act_cadence",
+  "items",
+  "disabled"
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "print": 1,
+   "export": 1,
+   "report": 1
+  },
+  {
+   "role": "UA Billing Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1,
+   "submit": 1,
+   "cancel": 1,
+   "amend": 1,
+   "print": 1,
+   "export": 1,
+   "report": 1
+  },
+  {
+   "role": "UA Billing User",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "submit": 1,
+   "print": 1,
+   "export": 1,
+   "report": 1
+  },
+  {
+   "role": "UA Billing Reader",
+   "read": 1,
+   "print": 1,
+   "export": 1,
+   "report": 1
+  }
+ ],
+ "actions": [],
+ "links": [],
+ "autoname": "hash",
+ "title_field": "contract_number",
+ "fields": [
+  {
+   "fieldname": "contract_number",
+   "fieldtype": "Data",
+   "label": "Номер договору",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "contract_date",
+   "fieldtype": "Date",
+   "label": "Дата договору",
+   "reqd": 1,
+   "default": "Today"
+  },
+  {
+   "fieldname": "organization",
+   "fieldtype": "Link",
+   "label": "Компанія-замовник",
+   "options": "CRM Organization",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "issuer",
+   "fieldtype": "Link",
+   "label": "Наш ФОП / ТОВ",
+   "options": "UA Issuer",
+   "reqd": 1,
+   "in_list_view": 1
+  },
+  {
+   "fieldname": "bank_account",
+   "fieldtype": "Select",
+   "label": "Банківський рахунок",
+   "options": ""
+  },
+  {
+   "fieldname": "start_date",
+   "fieldtype": "Date",
+   "label": "Початок дії",
+   "reqd": 1
+  },
+  {
+   "fieldname": "end_date",
+   "fieldtype": "Date",
+   "label": "Кінець дії",
+   "reqd": 1
+  },
+  {
+   "fieldname": "invoice_cadence",
+   "fieldtype": "Select",
+   "label": "Періодичність рахунків",
+   "options": "Monthly\nQuarterly\nHalf-yearly\nYearly\nOne-time",
+   "default": "Monthly",
+   "reqd": 1
+  },
+  {
+   "fieldname": "act_cadence",
+   "fieldtype": "Select",
+   "label": "Періодичність актів",
+   "options": "Monthly\nQuarterly\nHalf-yearly\nYearly\nOne-time",
+   "default": "Monthly",
+   "reqd": 1
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Позиції на один період рахунку",
+   "options": "UA Billing Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "disabled",
+   "fieldtype": "Check",
+   "label": "Закритий / неактивний",
+   "default": "0"
+  }
+ ]
+}

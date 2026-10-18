@@ -1,0 +1,74 @@
+{
+ "doctype": "Workspace",
+ "name": "UA Billing",
+ "label": "UA Billing",
+ "title": "Документи",
+ "module": "Billing",
+ "public": 1,
+ "is_hidden": 0,
+ "icon": "file-text",
+ "content": "[{\"id\": \"billing-title\", \"type\": \"header\", \"data\": {\"text\": \"Документи\", \"col\": 12}}, {\"id\": \"0\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Наші реквізити\", \"col\": 4}}, {\"id\": \"1\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Продукти та послуги\", \"col\": 4}}, {\"id\": \"2\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Договори\", \"col\": 4}}, {\"id\": \"3\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Рахунки\", \"col\": 4}}, {\"id\": \"4\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Акти\", \"col\": 4}}, {\"id\": \"5\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"Підписи та печатки\", \"col\": 4}}]",
+ "shortcuts": [
+  {
+   "label": "Наші реквізити",
+   "type": "DocType",
+   "link_to": "UA Issuer",
+   "doc_view": "List",
+   "color": "Grey"
+  },
+  {
+   "label": "Продукти та послуги",
+   "type": "DocType",
+   "link_to": "CRM Product",
+   "doc_view": "List",
+   "color": "Grey"
+  },
+  {
+   "label": "Договори",
+   "type": "DocType",
+   "link_to": "UA Contract",
+   "doc_view": "List",
+   "color": "Grey"
+  },
+  {
+   "label": "Рахунки",
+   "type": "DocType",
+   "link_to": "UA Invoice",
+   "doc_view": "List",
+   "color": "Grey"
+  },
+  {
+   "label": "Акти",
+   "type": "DocType",
+   "link_to": "UA Act",
+   "doc_view": "List",
+   "color": "Grey"
+  },
+  {
+   "label": "Підписи та печатки",
+   "type": "DocType",
+   "link_to": "UA Print Asset",
+   "doc_view": "List",
+   "color": "Grey"
+  }
+ ],
+ "roles": [
+  {
+   "role": "UA Billing User"
+  },
+  {
+   "role": "UA Billing Manager"
+  },
+  {
+   "role": "UA Billing Reader"
+  },
+  {
+   "role": "System Manager"
+  }
+ ],
+ "links": [],
+ "charts": [],
+ "number_cards": [],
+ "quick_lists": [],
+ "custom_blocks": []
+}

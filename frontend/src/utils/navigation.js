@@ -19,13 +19,17 @@ export const navigationItems = [
   { label: 'Deals', icon: DealsIcon, route: 'Deals' },
   { label: 'Contacts', icon: ContactsIcon, route: 'Contacts' },
   { label: 'Organizations', icon: OrganizationsIcon, route: 'Organizations' },
+  { label: 'Документи', icon: NoteIcon, route: 'Billing', billing: true },
   { label: 'Notes', icon: NoteIcon, route: 'Notes' },
   { label: 'Tasks', icon: TaskIcon, route: 'Tasks' },
   { label: 'Call Logs', icon: PhoneIcon, route: 'Call Logs' },
 ]
 
-export function getNavigationItems({ mobile = false } = {}) {
+export function getNavigationItems({ mobile = false, billing = false } = {}) {
   return navigationItems.filter(
-    (item) => router.hasRoute(item.route) && (!mobile || !item.desktopOnly),
+    (item) =>
+      router.hasRoute(item.route) &&
+      (!mobile || !item.desktopOnly) &&
+      (!item.billing || billing),
   )
 }

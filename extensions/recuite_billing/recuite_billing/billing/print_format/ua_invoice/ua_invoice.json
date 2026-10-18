@@ -1,0 +1,17 @@
+{
+ "doctype": "Print Format",
+ "name": "UA Invoice",
+ "doc_type": "UA Invoice",
+ "module": "Billing",
+ "standard": "Yes",
+ "custom_format": 1,
+ "print_format_type": "Jinja",
+ "disabled": 0,
+ "html": "<p>{{ doc.name }}</p>",
+ "font_size": 10,
+ "margin_top": 14,
+ "margin_bottom": 14,
+ "margin_left": 14,
+ "margin_right": 14,
+ "pdf_generator": "wkhtmltopdf"
+}

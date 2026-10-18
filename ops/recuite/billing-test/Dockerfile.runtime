@@ -1,0 +1,18 @@
+# Test-only overlay on the already inspected production-runtime image.
+# The operator verifies this local base's image ID before building; never retag it.
+FROM recuite/crm:v1.88.0-20261017
+# Realtime authenticates through Origin; use the private frontend alias, not host localhost.
+USER root
+RUN sed -i 's|proxy_set_header Origin .*;|proxy_set_header Origin http://billing-test.localhost:18082;|' /templates/nginx/frappe.conf.template \
+    && sed -i '/location \/socket.io/,/^[[:space:]]*}/s|proxy_set_header Host .*;|proxy_set_header Host billing-test.localhost:18082;|' /templates/nginx/frappe.conf.template
+USER frappe
+WORKDIR /home/frappe/frappe-bench
+ENV PYTHONDONTWRITEBYTECODE=1
+COPY --chown=frappe:frappe crm apps/crm/crm
+RUN rm -rf apps/crm/crm/public/frontend
+COPY --chown=frappe:frappe ops/recuite/billing-test/.frontend-build apps/crm/crm/public/frontend
+COPY --chown=frappe:frappe extensions/recuite_billing apps/recuite_billing
+COPY --chown=frappe:frappe ops/recuite/billing-test /opt/billing-test
+RUN env/bin/pip install --no-deps -e apps/recuite_billing \
+    && env/bin/python -c 'import frappe,crm,recuite_billing; assert frappe.__version__ == "15.123.1"; assert crm.__version__ == "1.88.0"' \
+    && ls -1 apps > sites/apps.txt

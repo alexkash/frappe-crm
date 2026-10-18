@@ -1,0 +1,15 @@
+[project]
+name = "recuite_billing"
+description = "Ukrainian invoices, acceptance acts and service contracts for Frappe CRM"
+requires-python = ">=3.10"
+dynamic = ["version"]
+authors = [{name = "Recuite"}]
+dependencies = []
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.bench.frappe-dependencies]
+frappe = ">=15.123.1,<16.0.0"
+crm = ">=1.88.0,<2.0.0"
