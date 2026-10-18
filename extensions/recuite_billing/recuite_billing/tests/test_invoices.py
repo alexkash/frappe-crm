@@ -8,6 +8,31 @@ from recuite_billing.tests.helpers import contract, issuer, organization, parall
 
 
 class TestInvoices(FrappeTestCase):
+	def test_amendment_preserves_the_cancelled_invoice_contract(self):
+		source = contract()
+		previous = frappe.get_doc("UA Invoice", self.create(source)["name"]).submit()
+		previous.cancel()
+		other = contract(
+			owner=frappe.get_doc("UA Issuer", source.issuer),
+			company=frappe.get_doc("CRM Organization", source.organization),
+		)
+		for contract_name in (other.name, None):
+			with self.subTest(contract=contract_name):
+				amendment = frappe.copy_doc(previous, ignore_no_copy=False)
+				amendment.amended_from = previous.name
+				amendment.contract = contract_name
+				frappe.db.savepoint("amendment_case")
+				try:
+					with self.assertRaisesRegex(frappe.ValidationError, "Редакція"):
+						amendment.insert()
+				finally:
+					frappe.db.rollback(save_point="amendment_case")
+		amendment = frappe.copy_doc(previous, ignore_no_copy=False)
+		amendment.amended_from = previous.name
+		amendment.insert().submit()
+		self.assertEqual(amendment.contract, source.name)
+		self.assertEqual(amendment.amended_from, previous.name)
+
 	def test_missing_act_cadence_cannot_issue_an_invoice(self):
 		doc = frappe.get_doc("UA Invoice", self.create(contract())["name"])
 		doc.act_cadence = ""

@@ -213,11 +213,12 @@ def validate_invoice(doc, *, issue=False):
 			frappe.throw(_("Угода CRM належить іншій компанії"))
 	if doc.amended_from:
 		previous = record("UA Invoice", doc.amended_from)
-		if previous.docstatus != 2 or (previous.issuer, previous.organization) != (
+		if previous.docstatus != 2 or (previous.issuer, previous.organization, previous.contract or None) != (
 			doc.issuer,
 			doc.organization,
+			doc.contract or None,
 		):
-			frappe.throw(_("Редакція має посилатися на скасований рахунок тих самих сторін"))
+			frappe.throw(_("Редакція має посилатися на скасований рахунок тих самих сторін і договору"))
 	issuer, snapshot = _parties(doc, complete=issue)
 	calculate_document(doc, issuer, current)
 	doc.pdf_file = doc.pdf_sha256 = doc.print_assets_snapshot = None
