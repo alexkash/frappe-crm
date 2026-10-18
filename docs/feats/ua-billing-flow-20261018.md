@@ -75,3 +75,18 @@ Local source hashes match the privately tested addon:
 Unrelated dirty `AGENTS.md`/the earlier billing plan are excluded from this runtime
 commit. The user-requested removal of the obsolete coordination gate remains in
 the local AGENTS files alongside their pre-existing project-boundary edits.
+
+## Follow-up: partial periods
+
+Ponytail review found that an empty date suggestion also occurs after a document
+covers only part of a calendar period. The form now permits manual dates instead
+of treating that response as proof of full coverage. Existing server overlap,
+quantity and issuance checks are unchanged.
+
+Three new regression cases were observed RED then GREEN: manual invoice and act
+creation for January16–31 with an empty suggestion, and denial when no invoice
+quantity remains. They check the explicit creation payload and destination too.
+Final local frontend311/311; scoped ESLint, JS syntax and whitespace checks pass.
+No VPS services, production data or migration/archive files were touched for this
+follow-up. Combine this follow-up commit with the coordinator's imported flow
+commit before final acceptance; no separate flow image has been built here.

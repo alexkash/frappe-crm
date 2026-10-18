@@ -105,6 +105,52 @@ describe('company document continuation', () => {
     expect(t.dialogs[0].options.title).toBe('Новий акт')
     expect(t.requests.some(r => r.method.endsWith('create_act'))).toBe(false)
   })
+  it.each([
+    ['UA Contract', 0, 'invoice', 'UA Invoice', 'create_invoice'],
+    ['UA Invoice', 1, 'act', 'UA Act', 'create_act'],
+  ])('allows a manual remaining period for %s when no dates are suggested', async (doctype, docstatus, action, target, method) => {
+    window.history.replaceState({}, '', `/app/source/doc-1?billing_action=${action}`)
+    const t = setup(doctype, { docstatus })
+    t.frappe.call = async (request) => {
+      t.requests.push(request)
+      if (request.method.endsWith('get_document_context')) return { message: { related: [] } }
+      if (request.method.endsWith('get_period_suggestion')) return { message: {} }
+      if (request.method.endsWith('get_act_items'))
+        return { message: [{ invoice_item: 'item-1', product_name: 'Service', remaining: '6', qty: '6' }] }
+      if (request.method === `recuite_billing.api.${method}`)
+        return { message: { name: 'remaining-draft', existing: false } }
+      throw new Error(`Unexpected request: ${request.method}`)
+    }
+    await t.refresh()
+    expect(t.dialogs).toHaveLength(1)
+    const fields = t.dialogs[0].options.fields
+    for (const name of ['period_from', 'period_to']) {
+      expect(fields.find(field => field.fieldname === name)).toMatchObject({ reqd: 1, default: undefined })
+    }
+    expect(t.requests.some(request => request.method.endsWith(method))).toBe(false)
+    const dates = { period_from: '2026-01-16', period_to: '2026-01-31' }
+    const values = action === 'act'
+      ? { ...dates, items: [{ invoice_item: 'item-1', qty: '6' }] }
+      : dates
+    await t.dialogs[0].options.primary_action(values)
+    expect(t.requests.filter(request => request.method === `recuite_billing.api.${method}`)).toEqual([{
+      method: `recuite_billing.api.${method}`,
+      args: { [action === 'act' ? 'invoice' : 'contract']: 'doc-1', ...values },
+    }])
+    expect(t.frappe.set_route).toHaveBeenCalledWith('Form', target, 'remaining-draft')
+  })
+  it('still blocks an act when no invoice quantities remain and no dates are suggested', async () => {
+    const t = setup('UA Invoice', { docstatus: 1 })
+    t.frappe.call = async ({ method }) => ({
+      message: method.endsWith('get_document_context')
+        ? { related: [] }
+        : method.endsWith('get_period_suggestion') ? {} : [],
+    })
+    await t.refresh()
+    await t.buttons.get('Створити акт')()
+    expect(t.dialogs).toHaveLength(0)
+    expect(t.frappe.msgprint).toHaveBeenCalledWith('Рахунок повністю закритий актами')
+  })
   it('does not let an unrelated requested action bypass document state', async () => {
     window.history.replaceState({}, '', '/app/ua-invoice/doc-1?billing_action=act')
     const t = setup('UA Invoice')

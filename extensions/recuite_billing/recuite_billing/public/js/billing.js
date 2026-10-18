@@ -58,8 +58,6 @@
       name: doc.name,
     });
     if (frm.doc !== doc) return;
-    if (!suggestion.period_from || !suggestion.period_to)
-      return frappe.msgprint("Усі періоди вже мають документи. Продовжіть роботу з пов’язаним документом нижче.");
     const fields = [
       {
         fieldname: "period_from",
