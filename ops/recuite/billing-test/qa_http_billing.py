@@ -88,13 +88,9 @@ def main():
 		assert status == 200 and content.startswith(b"%PDF-")
 		groups = {"UA Invoice": [invoice.name], "UA Act": [act_info["name"]]}
 		grouped_args = {"doctype": json.dumps(groups), "name": "[]"}
-		status, content = request(
-			"/api/method/frappe.utils.print_format.download_multi_pdf", grouped_args
-		)
+		status, content = request("/api/method/frappe.utils.print_format.download_multi_pdf", grouped_args)
 		assert status == 200 and content.startswith(b"%PDF-"), (status, content[:300])
-		status, body = request(
-			"/api/method/frappe.utils.print_format.download_multi_pdf_async", grouped_args
-		)
+		status, body = request("/api/method/frappe.utils.print_format.download_multi_pdf_async", grouped_args)
 		assert status == 417, (status, body[:300])
 		print(
 			json.dumps(
