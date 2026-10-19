@@ -1,45 +1,89 @@
 <style>
   @page { size: A4; margin: 14mm; }
   * { box-sizing: border-box; }
-  body, .print-format { font-family: "DejaVu Sans", sans-serif; font-size: 10pt; line-height: 1.38; color: #17202b; }
-  .document { width: 100%; }
-  h1 { font-size: 15pt; text-align: center; margin: 9mm 0 7mm; color: #162f46; }
+  body, .print-format { margin: 0; padding: 0; font-family: "DejaVu Sans", sans-serif; font-size: 9pt; line-height: 1.45; color: #26343d; }
+  .document { width: 100%; word-wrap: break-word; overflow-wrap: break-word; }
   p { margin: 0 0 3mm; }
-  .draft { text-align: center; color: #9b3333; font-weight: bold; letter-spacing: 2px; padding-bottom: 4mm; }
-  .logo { float: right; max-width: 36mm; max-height: 24mm; margin: 0 0 4mm 7mm; }
-  .requisites { border-collapse: collapse; width: 100%; margin-bottom: 5mm; }
-  .requisites td { border: 0; padding: 1mm 2mm 1mm 0; vertical-align: top; }
-  .requisites .label { width: 29mm; font-weight: bold; }
+  table { border-collapse: collapse; }
+  .masthead { width: 100%; table-layout: fixed; margin-bottom: 7mm; }
+  .masthead td { vertical-align: middle; border-bottom: 0.4mm solid #233f4d; padding: 0 0 4mm; }
+  .masthead .category { text-align: right; color: #6b7a83; font-size: 8pt; letter-spacing: 0.8pt; white-space: nowrap; padding-left: 6mm; }
+  .brand-name { font-size: 12pt; font-weight: bold; }
+  .logo { display: block; max-width: 40mm; max-height: 12mm; }
+  h1 { font-size: 25pt; line-height: 1.18; letter-spacing: -0.6pt; margin: 0 0 2mm; color: #193543; text-align: left; }
+  .document-subtitle { font-size: 10pt; margin-bottom: 5mm; }
+  .document-subtitle strong { font-weight: bold; }
+  .act-document h1 { font-size: 20pt; letter-spacing: -0.35pt; }
+  .act-title { font-size: 11pt; margin-bottom: 5mm; }
+  .draft { color: #8a4038; font-size: 8pt; font-weight: bold; letter-spacing: 1.5pt; margin-bottom: 3mm; }
+  .meta { width: 100%; table-layout: fixed; border-top: 0.2mm solid #d6dfe3; border-bottom: 0.2mm solid #d6dfe3; margin-bottom: 5mm; }
+  .meta td { padding: 2.5mm 3mm 2.5mm 0; vertical-align: top; }
+  .meta td + td { padding-left: 5mm; }
+  .meta-label { display: block; font-size: 7.5pt; color: #6b7a83; margin-bottom: 0.7mm; }
+  .meta-value { display: block; font-size: 8.5pt; }
+  .reference { word-break: break-all; }
+  .parties, .act-footer { width: 100%; table-layout: fixed; }
+  .parties > tbody > tr > td, .act-footer > tbody > tr > td { width: 50%; vertical-align: top; padding: 0 6mm 0 0; }
+  .parties > tbody > tr > td + td, .act-footer > tbody > tr > td + td { padding: 0 0 0 6mm; }
+  .parties { margin-bottom: 5mm; }
+  .role { color: #657680; font-size: 8pt; margin-bottom: 1.5mm; }
+  .party-name { font-size: 10pt; font-weight: bold; margin-bottom: 1.5mm; padding-right: 3mm; }
   .details { white-space: pre-line; word-wrap: break-word; overflow-wrap: break-word; }
+  .requisite-line { margin-bottom: 0.7mm; font-size: 8pt; line-height: 1.45; word-wrap: break-word; overflow-wrap: break-word; }
+  .payment { width: 100%; background: #f1f5f6; margin: 0 0 5mm; }
+  .payment td { padding: 3mm 4mm; }
+  .payment .meta-label { margin-bottom: 1mm; }
+  .iban { font-size: 10.5pt; font-weight: bold; letter-spacing: 0.2pt; margin-bottom: 1mm; }
   .items { width: 100%; border-collapse: collapse; table-layout: fixed; }
   .items thead { display: table-header-group; }
-  .items th { background: #edf2f5; color: #162f46; font-size: 9pt; }
-  .items th, .items td { border: 0.3mm solid #9aa8b4; padding: 2mm 1.5mm; vertical-align: top; }
-  .items td.description { word-wrap: break-word; overflow-wrap: break-word; white-space: pre-line; }
-  .number { text-align: right; white-space: nowrap; font-size: 9pt; }
-  .unit { text-align: center; font-size: 9pt; }
-  .totals { width: 100%; border-collapse: collapse; margin-top: 3mm; }
-  .totals td { padding: 1mm 0; }
-  .totals .label { text-align: right; padding-right: 4mm; }
-  .totals .value { width: 36mm; text-align: right; font-weight: bold; }
-  .final-block { page-break-inside: avoid; }
-  .words { margin-top: 5mm; }
-  .words strong { display: block; }
-  .signing { position: relative; min-height: 35mm; margin-top: 6mm; page-break-inside: avoid; }
-  .signature-line { display: inline-block; min-width: 49mm; border-bottom: 0.3mm solid #17202b; min-height: 10mm; vertical-align: bottom; }
-  .signature-image { max-width: 45mm; max-height: 12mm; vertical-align: bottom; }
-  .stamp-image { max-width: 32mm; max-height: 32mm; margin-left: 5mm; vertical-align: top; }
-  .signatory-name { margin-top: 1mm; font-size: 9pt; }
-  .two-columns { width: 100%; border-collapse: collapse; table-layout: fixed; }
-  .two-columns td { width: 50%; vertical-align: top; padding-right: 7mm; }
-  .two-columns td:last-child { padding-right: 0; padding-left: 3mm; }
-  .approval { min-height: 37mm; }
-  .act-services { width: 100%; border-collapse: collapse; margin: 5mm 0; }
-  .act-services td { vertical-align: top; padding: 2mm 0; border-bottom: 0.2mm solid #d4dde4; }
-  .act-services .number { width: 44mm; padding-left: 5mm; }
-  .muted { color: #556575; font-size: 9pt; }
-  .act-footer { margin-top: 7mm; }
-  .act-document h1 { margin: 7mm 0 5mm; }
-  .act-document .act-footer { font-size: 9pt; line-height: 1.3; }
-  .act-document .stamp-image { max-width: 28mm; max-height: 28mm; }
+  .items tr { page-break-inside: avoid; }
+  .items th { background: #f1f5f6; border-bottom: 0.3mm solid #bccbd2; font-size: 7.5pt; font-weight: bold; color: #344f5d; text-align: left; padding: 2.5mm 1.5mm; vertical-align: bottom; }
+  .items td { padding: 3mm 1.5mm; vertical-align: top; border-bottom: 0.2mm solid #dce4e7; }
+  .items .row-index { text-align: center; color: #7b8990; font-size: 8pt; }
+  .item-name { font-size: 8.8pt; font-weight: bold; word-wrap: break-word; overflow-wrap: break-word; }
+  .item-description { margin-top: 1mm; color: #657680; font-size: 8pt; line-height: 1.45; white-space: pre-line; word-wrap: break-word; overflow-wrap: break-word; }
+  .items .number { text-align: right; white-space: nowrap; font-size: 8pt; }
+  .items th.number { font-size: 7.5pt; white-space: normal; }
+  .items .unit { text-align: center; font-size: 7.5pt; word-wrap: break-word; }
+  .items .line-amount { font-weight: bold; }
+  .settlement { width: 100%; table-layout: fixed; margin-top: 5mm; }
+  .words-cell { width: 53%; padding: 0 9mm 0 0; vertical-align: top; }
+  .totals-cell { width: 47%; padding: 0; vertical-align: top; }
+  .words .meta-label { margin-bottom: 1.5mm; }
+  .words strong { display: block; font-size: 9pt; font-weight: normal; margin-bottom: 1.5mm; }
+  .totals { width: 100%; }
+  .totals td { padding: 0 0 1.5mm; vertical-align: top; }
+  .totals .label { text-align: right; color: #657680; font-size: 8.5pt; padding-right: 4mm; }
+  .totals .value { text-align: right; white-space: nowrap; font-size: 9pt; }
+  .totals .grand td { border-top: 0.3mm solid #233f4d; padding-top: 2.5mm; }
+  .totals .grand .label { color: #193543; font-weight: bold; padding-top: 4mm; }
+  .totals .grand .value { color: #193543; font-weight: bold; font-size: 17pt; line-height: 1.2; }
+  .currency { font-size: 9pt; font-weight: normal; }
+  .final-block, .act-footer, .signing { page-break-inside: avoid; }
+  .signing { width: 100%; margin-top: 8mm; table-layout: fixed; }
+  .signing td { vertical-align: bottom; padding: 0; }
+  .signing .seal { padding-left: 8mm; }
+  .signature-line { display: block; position: relative; width: 58mm; max-width: 100%; height: 13mm; border-bottom: 0.2mm solid #85979f; }
+  .signature-image { position: absolute; bottom: 1mm; left: 1mm; max-width: 45mm; max-height: 11mm; }
+  .stamp-image { display: block; max-width: 27mm; max-height: 27mm; }
+  .signatory-name { margin-top: 1.5mm; font-size: 8.5pt; }
+  .muted { color: #657680; font-size: 8pt; }
+  .act-intro { font-size: 8.5pt; line-height: 1.5; margin-bottom: 4mm; padding-right: 10mm; }
+  .acceptance-note { margin: 4mm 0 5mm; font-size: 8.5pt; }
+  .act-footer { border-top: 0.2mm solid #d6dfe3; }
+  .act-footer > tbody > tr > td { padding-top: 4mm; }
+  .act-footer > tbody > tr > td + td { padding-top: 4mm; }
+  .act-footer .role { font-size: 8.5pt; font-weight: bold; color: #344f5d; }
+  .act-footer .party-name { font-size: 9pt; }
+  .approval { font-size: 7.5pt; letter-spacing: 0.6pt; color: #657680; margin: 4mm 0 0; }
+  .endorsement { width: 100%; height: 25mm; table-layout: fixed; }
+  .endorsement td { vertical-align: bottom; padding: 0; }
+  .endorsement .seal { width: 29mm; padding-left: 3mm; }
+  .endorsement .signature-line { width: 100%; }
+  .endorsement .signature-image { max-width: 39mm; }
+  .endorsement .stamp-image { max-width: 25mm; max-height: 25mm; }
+  .act-document .masthead { margin-bottom: 5mm; }
+  .act-document .meta { margin-bottom: 4mm; }
+  .act-document .items td { padding-top: 2.3mm; padding-bottom: 2.3mm; }
+  .act-footer .signature-row > td { padding-top: 0; }
 </style>

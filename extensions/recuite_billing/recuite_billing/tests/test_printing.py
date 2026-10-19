@@ -13,6 +13,16 @@ from recuite_billing.tests.test_print_assets import asset, png_bytes
 
 
 class TestPrinting(FrappeTestCase):
+	def test_invoice_pdf_keeps_the_service_unit_together(self):
+		from recuite_billing.printing import get_document_pdf
+
+		invoice = self.draft()
+		invoice.items[0].uom = "послуга"
+		invoice.save().submit()
+		content = get_document_pdf(invoice.doctype, invoice.name).get_content()
+		text = "\n".join(page.extract_text() for page in PdfReader(BytesIO(content)).pages)
+		self.assertIn("послуга", text)
+
 	def test_json_grouped_pdf_uses_archives_and_cannot_start_async_rerender(self):
 		from recuite_billing.printing import download_multi_pdf, download_multi_pdf_async
 
